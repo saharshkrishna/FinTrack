@@ -7,7 +7,6 @@ const bodyParser = require('body-parser');
 const connectDB = require('./MongoDb/connect.js');
 const cors = require('cors');
 // Import all route files
-const userRoutes = require('./routes/user.route');
 const loanRoutes = require('./routes/loan.routes');
 const loanReRoutes = require('./routes/loanRe.routes');
 const partyRoutes = require('./routes/party.routes');
@@ -47,7 +46,6 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 // Mount all route files with their respective API paths
-app.use('/api/user', userRoutes);
 app.use('/api/user/transactions', transactionRoutes);
 app.use('/api/user/loans', loanRoutes);
 app.use('/api/user/loanRe', loanReRoutes);
@@ -55,6 +53,7 @@ app.use('/api/user/parties', partyRoutes);
 app.use('/api/user/paymentMode', paymentModeRoutes);
 app.use('/api/user/category', categoryRoutes);
 app.use('/api/user/uploads', fileRoutes);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 //function to start the server with async/await and error handling
 const StartServer = async (MONGODB_URL) => {
     try {
