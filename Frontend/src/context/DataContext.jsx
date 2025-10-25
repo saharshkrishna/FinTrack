@@ -38,7 +38,6 @@ export const DataProvider = ({ children }) => {
   
     fetchData();
   }, []);
-
   
 // 🆕 Loan-related APIs
 const fetchLoans = async () => {
@@ -68,3 +67,44 @@ const updateLoan = async (id, updatedData) => {
     setLoans((prevLoans) =>
       prevLoans.map((loan) => (loan._id === id ? response.data.loan : loan))
     );
+    toast.success("Loan updated successfully");
+  } catch (error) {
+    console.error("Error updating loan:", error);
+    toast.error("Failed to update loan");
+  }
+};
+
+const deleteLoan = async (id) => {
+  try {
+    await axios.delete(`http://localhost:5000/api/user/loans/${id}`);
+    setLoans((prevLoans) => prevLoans.filter((loan) => loan._id !== id));
+    toast.success("Loan deleted successfully");
+  } catch (error) {
+    console.error("Error deleting loan:", error);
+    toast.error("Failed to delete loan");
+  }
+};
+
+  return (
+    <DataContext.Provider
+      value={{
+        parties,
+        categories,
+        paymentModes,
+        loans,
+        loading,
+        error,
+        fetchLoans,
+        createLoan,
+        updateLoan,
+        deleteLoan,
+      }}
+    >
+      {children}
+    </DataContext.Provider>
+  );
+};
+
+DataProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+};
