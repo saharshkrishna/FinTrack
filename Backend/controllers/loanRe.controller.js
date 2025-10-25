@@ -1,47 +1,56 @@
 const LoanRe = require('../MongoDb/models/userModels/LoanRe');
-const User = require('../MongoDb/models/User');
 
-const createLoanRe = async (req, res) => {
+exports.createLoanRe = async (req, res) => {
   try {
-    const { userId, amount, date, category, description, loanTakenFrom } = req.body;
-    
-    if (!userId || !amount || !date || !category || !description || !loanTakenFrom) {
-      return res.status(400).json({ message: "All fields are required" });
+    const {
+      date,
+      loanId,
+      loanTitle,
+      loanAmount,
+      interestRate,
+      originalEMI,
+      emiAmount,
+      emiType,
+      partyName,
+      remarks,
+      paymentMode
+    } = req.body;
+    if (!date || !loanId || !emiAmount) {
+      return res.status(400).json({ error: "Missing required fields" });
     }
     const newLoanRe = new LoanRe({
-      user: userId,
-      amount,
       date,
-      category,
-      description,
-      loanTakenFrom,
+      loanId,
+      loanTitle,
+      loanAmount,
+      interestRate,
+      originalEMI,
+      emiAmount,
+      emiType,
+      partyName,
+      remarks,
+      paymentMode
     });
     const savedLoanRe = await newLoanRe.save();
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    user.loanRe.push(savedLoanRe._id);
-    await user.save();
     res.status(201).json({
-      message: "LoanRe entry created successfully",
-      loanRe: savedLoanRe,
+      message: "Loan reimbursement added successfully",
+      loanRe: savedLoanRe
     });
-  } catch (error) {
-    console.error("Error in createLoanRe:", error);
+  } catch (err) {
+    console.error("Error creating LoanRe:", err);
     res.status(500).json({
-      message: "Failed to create LoanRe entry",
-      error: error.message,
+      error: "Something went wrong!!",
+      details: err.message
     });
   }
 };
-const getLoanReEntries = async (req, res) => {
+
+exports.getLoanReEntries = async (req, res) => {
   try {
-    const { userId } = req.body;
-    const loanReEntries = await LoanRe.find({ user: userId });
-    res.json(loanReEntries);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    const entries = await LoanRe.find().sort({ createdAt: -1 });
+    res.status(200).json({ loanReEntries: entries });
+  } catch (err) {
+    console.error("LoanRe GET error:", err);
+    res.status(500).json({ message: "Error fetching reimbursements", error: err.message });
   }
 };
-module.exports = { createLoanRe, getLoanReEntries };
