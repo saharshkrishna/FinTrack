@@ -16,6 +16,11 @@ const categoryRoutes = require('./routes/category.routes');
 const fileRoutes = require('./routes/file.routes');
 //compiling .env file
 dotenv.config();
+
+// Import auth routes
+const authRoutes = require('./routes/auth.routes');
+app.use('/api/auth', authRoutes);
+
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
 try {

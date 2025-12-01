@@ -1,46 +1,23 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
-// Define the schema for the transaction
-const transactionSchema = new mongoose.Schema({
-
-    type: {
-        type: String,
-        required: true,
-        enum: ["Cash In", "Cash Out", "Credit","Debit"], 
-    },
-    date: {
-        type: String, // Stored as a string in "YYYY-MM-DD" format
-        required: true,
-    },
-    amount: {
-        type: Number,
-        required: true,
-    },
-    partyName: {
-        type: String,
-        default: "", // Optional field
-    },
-    remarks: {
-        type: String,
-        default: "", // Optional field
-    },
-    category: {
-        type: String,
-        default: "", // Optional field
-    },
-    paymentMode: {
-        type: String,
-        default: "Cash", // Default payment mode is "Cash"
-    },
-    files: [{
-        type: String, // Store file paths or URLs for attached bills
-    }],
-}, {
-    timestamps: true, // Automatically add `createdAt` and `updatedAt` fields
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
 });
 
+// Hash password before saving
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
 
-// Create the model
-const Transaction = mongoose.model('Transaction', transactionSchema);
+// Compare password method
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
 
-module.exports = Transaction;
+module.exports = mongoose.model('User', userSchema);

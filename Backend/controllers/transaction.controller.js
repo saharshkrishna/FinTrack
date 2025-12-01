@@ -1,10 +1,19 @@
-const mongoose = require('mongoose');
-const Transaction = require("../MongoDb/models/userModels/User");
+const mongoose = require("mongoose");
+const Transaction = require("../MongoDb/models/userModels/Transaction");
 
 // Transaction APIs
 exports.createTransaction = async (req, res) => {
   try {
-    const { type, date, amount, partyName, remarks, category, paymentMode, files } = req.body;
+    const {
+      type,
+      date,
+      amount,
+      partyName,
+      remarks,
+      category,
+      paymentMode,
+      files,
+    } = req.body;
     if (!type || !date || !amount) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -19,9 +28,16 @@ exports.createTransaction = async (req, res) => {
       files,
     });
     const savedTransaction = await newTransaction.save();
-    res.status(201).json({ message: "Transaction created successfully", transaction: savedTransaction });
+    res
+      .status(201)
+      .json({
+        message: "Transaction created successfully",
+        transaction: savedTransaction,
+      });
   } catch (err) {
-    res.status(500).json({ error: "Something went wrong!!", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Something went wrong!!", details: err.message });
   }
 };
 
@@ -31,7 +47,9 @@ exports.getAllTransactions = async (req, res) => {
     res.status(200).json({ transactions });
   } catch (err) {
     console.error("Error fetching transactions:", err);
-    res.status(500).json({ error: "Something went wrong!!", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Something went wrong!!", details: err.message });
   }
 };
 
@@ -44,7 +62,9 @@ exports.getTransactionsByType = async (req, res) => {
     const transactions = await Transaction.find({ type });
     res.status(200).json({ transactions });
   } catch (err) {
-    res.status(500).json({ error: "Something went wrong!!", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Something went wrong!!", details: err.message });
   }
 };
 
@@ -54,13 +74,24 @@ exports.updateTransaction = async (req, res) => {
     const updateData = req.body;
     console.log("Updating transaction with ID:", id);
     console.log("Update data:", updateData);
-    const updatedTransaction = await Transaction.findByIdAndUpdate(id, updateData, { new: true });
+    const updatedTransaction = await Transaction.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true }
+    );
     if (!updatedTransaction) {
       return res.status(404).json({ error: "Transaction not found" });
     }
-    res.status(200).json({ message: "Transaction updated successfully", transaction: updatedTransaction });
+    res
+      .status(200)
+      .json({
+        message: "Transaction updated successfully",
+        transaction: updatedTransaction,
+      });
   } catch (err) {
-    res.status(500).json({ error: "Something went wrong!!", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Something went wrong!!", details: err.message });
   }
 };
 
