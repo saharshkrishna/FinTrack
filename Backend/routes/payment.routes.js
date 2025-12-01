@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { AddPaymentMode, getPaymentModes } = require('../controllers/paymentMode.controller');
+const { AddPaymentMode, getPaymentModes } = require('../controllers/Payment.controller');
 
 // POST route for adding a payment mode
 router.post('/', AddPaymentMode);
