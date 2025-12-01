@@ -1,5 +1,8 @@
 const LoanRe = require('../MongoDb/models/userModels/LoanRe');
 
+//LoanRe Apis
+
+
 exports.createLoanRe = async (req, res) => {
   try {
     const {
@@ -15,9 +18,13 @@ exports.createLoanRe = async (req, res) => {
       remarks,
       paymentMode
     } = req.body;
+
+    // ✅ Validate required fields
     if (!date || !loanId || !emiAmount) {
       return res.status(400).json({ error: "Missing required fields" });
     }
+
+    // ✅ Construct and save LoanRe entry
     const newLoanRe = new LoanRe({
       date,
       loanId,
@@ -31,7 +38,9 @@ exports.createLoanRe = async (req, res) => {
       remarks,
       paymentMode
     });
+
     const savedLoanRe = await newLoanRe.save();
+
     res.status(201).json({
       message: "Loan reimbursement added successfully",
       loanRe: savedLoanRe
@@ -44,6 +53,7 @@ exports.createLoanRe = async (req, res) => {
     });
   }
 };
+
 
 exports.getLoanReEntries = async (req, res) => {
   try {

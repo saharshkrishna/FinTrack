@@ -22,7 +22,7 @@ const AddEntryModal = ({ entryType, onClose }) => {
     setLoading(true);
     try {
       if (entryType === "category") {
-        const response = await axios.post("http://localhost:5000/api/user/category", { Category: newValue });
+        const response = await axios.post("http://localhost:5000/api/user/category", { category: newValue });
         console.log("Category Response:", response.data.newCategory);
         setCategories((prev) => [...prev, response.data.newCategory]); // Adds full object
         toast.success("Category added successfully");

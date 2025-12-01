@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const loanController = require('../controllers/loan.controller');
+const loanController = require("../controllers/loan.controller");
 
 // POST / - Create a new loan
 router.post('/', loanController.createLoan);
