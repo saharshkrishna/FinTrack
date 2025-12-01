@@ -62,7 +62,7 @@ const ExpenseBook = () => {
 
     const filtered = tableData.filter((entry) => {
       // Check if remark is defined before calling toLowerCase
-      const remark = entry.remark || ""; // Default to empty string if remark is undefined
+      const remark = entry.remarkss || ""; // Default to empty string if remark is undefined
       const amount = entry.amount || ""; // Default to empty string if amount is undefined
       console.log("Entry Remark:", remark);
       return (
