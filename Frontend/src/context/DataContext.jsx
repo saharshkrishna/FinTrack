@@ -6,28 +6,33 @@ import { toast } from 'react-toastify';
 
 export const DataContext = createContext();
 
+const API_BASE_URL = "http://localhost:5000/api/user";
+
 export const DataProvider = ({ children }) => {
   const [parties, setParties] = useState([]);
   const [categories, setCategories] = useState([]);
   const [paymentModes, setPaymentModes] = useState([]);
-  const [loans, setLoans] = useState([]); // 🆕 Loans state
+  const [loans, setLoans] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [partiesResponse, categoriesResponse, paymentModesResponse,loansResponse] = await Promise.all([
-          axios.get("http://localhost:5000/api/user/parties"),
-          axios.get("http://localhost:5000/api/user/category"),
-          axios.get("http://localhost:5000/api/user/paymentmode"),
-          axios.get("http://localhost:5000/api/user/loans")
+        const [partiesResponse, categoriesResponse, paymentModesResponse, loansResponse, transactionsResponse] = await Promise.all([
+          axios.get(`${API_BASE_URL}/parties`),
+          axios.get(`${API_BASE_URL}/category`),
+          axios.get(`${API_BASE_URL}/paymentmode`),
+          axios.get(`${API_BASE_URL}/loans`),
+          axios.get(`${API_BASE_URL}/transactions`)
         ]);
-  
+        
         setParties(partiesResponse.data.parties || []);
         setCategories(categoriesResponse.data.category || []);
         setPaymentModes(paymentModesResponse.data.paymentMode || []);
         setLoans(loansResponse.data.loans || []);
+        setTransactions(transactionsResponse.data.transactions || []);
       } catch (err) {
         console.error("Error fetching shared data:", err);
         setError("Error fetching data");
@@ -35,65 +40,135 @@ export const DataProvider = ({ children }) => {
         setLoading(false);
       }
     };
-  
+    
     fetchData();
   }, []);
-  
-// 🆕 Loan-related APIs
-const fetchLoans = async () => {
-  try {
-    const response = await axios.get("http://localhost:5000/api/user/loans");
-    setLoans(response.data.loans || []);
-  } catch (err) {
-    console.error("Error fetching loans:", err);
-  }
-};
 
-const createLoan = async (loanData) => {
-  try {
-    const response = await axios.post("http://localhost:5000/api/user/loans", loanData);
-    const newLoan = response.data.loan;
-    setLoans((prev) => [newLoan, ...prev]); // Update state with the new loan
-    toast.success("Loan added successfully");
-  } catch (error) {
-    console.error("Error creating loan:", error);
-    toast.error("Failed to add loan");
-  }
-};
+  // ==================== Transaction APIs ====================
+  const fetchTransactions = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/transactions`);
+      setTransactions(response.data.transactions || []);
+    } catch (err) {
+      console.error("Error fetching transactions:", err);
+      toast.error("Failed to fetch transactions");
+    }
+  };
 
-const updateLoan = async (id, updatedData) => {
-  try {
-    const response = await axios.put(`http://localhost:5000/api/user/loans/${id}`, updatedData);
-    setLoans((prevLoans) =>
-      prevLoans.map((loan) => (loan._id === id ? response.data.loan : loan))
-    );
-    toast.success("Loan updated successfully");
-  } catch (error) {
-    console.error("Error updating loan:", error);
-    toast.error("Failed to update loan");
-  }
-};
+  const createTransaction = async (transactionData) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/transactions`, transactionData);
+      const newTransaction = response.data.transaction;
+      setTransactions((prev) => [newTransaction, ...prev]);
+      toast.success("Transaction created successfully");
+      return newTransaction;
+    } catch (error) {
+      console.error("Error creating transaction:", error);
+      toast.error("Failed to create transaction");
+      throw error;
+    }
+  };
 
-const deleteLoan = async (id) => {
-  try {
-    await axios.delete(`http://localhost:5000/api/user/loans/${id}`);
-    setLoans((prevLoans) => prevLoans.filter((loan) => loan._id !== id));
-    toast.success("Loan deleted successfully");
-  } catch (error) {
-    console.error("Error deleting loan:", error);
-    toast.error("Failed to delete loan");
-  }
-};
+  const updateTransaction = async (id, updatedData) => {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/transactions/${id}`, updatedData);
+      setTransactions((prevTransactions) =>
+        prevTransactions.map((transaction) => 
+          transaction._id === id ? response.data.transaction : transaction
+        )
+      );
+      toast.success("Transaction updated successfully");
+      return response.data.transaction;
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+      toast.error("Failed to update transaction");
+      throw error;
+    }
+  };
+
+  const deleteTransactions = async (ids) => {
+    try {
+      await axios.post(`${API_BASE_URL}/transactions/delete`, { ids });
+      setTransactions((prevTransactions) => 
+        prevTransactions.filter((transaction) => !ids.includes(transaction._id))
+      );
+      toast.success("Transaction(s) deleted successfully");
+    } catch (error) {
+      console.error("Error deleting transactions:", error);
+      toast.error("Failed to delete transaction(s)");
+      throw error;
+    }
+  };
+
+  // ==================== Loan APIs ====================
+  const fetchLoans = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/loans`);
+      setLoans(response.data.loans || []);
+    } catch (err) {
+      console.error("Error fetching loans:", err);
+      toast.error("Failed to fetch loans");
+    }
+  };
+
+  const createLoan = async (loanData) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/loans`, loanData);
+      const newLoan = response.data.loan;
+      setLoans((prev) => [newLoan, ...prev]);
+      toast.success("Loan added successfully");
+      return newLoan;
+    } catch (error) {
+      console.error("Error creating loan:", error);
+      toast.error("Failed to add loan");
+      throw error;
+    }
+  };
+
+  const updateLoan = async (id, updatedData) => {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/loans/${id}`, updatedData);
+      setLoans((prevLoans) =>
+        prevLoans.map((loan) => (loan._id === id ? response.data.loan : loan))
+      );
+      toast.success("Loan updated successfully");
+      return response.data.loan;
+    } catch (error) {
+      console.error("Error updating loan:", error);
+      toast.error("Failed to update loan");
+      throw error;
+    }
+  };
+
+  const deleteLoan = async (id) => {
+    try {
+      await axios.delete(`${API_BASE_URL}/loans/${id}`);
+      setLoans((prevLoans) => prevLoans.filter((loan) => loan._id !== id));
+      toast.success("Loan deleted successfully");
+    } catch (error) {
+      console.error("Error deleting loan:", error);
+      toast.error("Failed to delete loan");
+      throw error;
+    }
+  };
 
   return (
     <DataContext.Provider
       value={{
+        // Shared data
         parties,
         categories,
         paymentModes,
         loans,
+        transactions,
         loading,
         error,
+        // Transaction operations
+        fetchTransactions,
+        createTransaction,
+        updateTransaction,
+        deleteTransactions,
+        // Loan operations
         fetchLoans,
         createLoan,
         updateLoan,
