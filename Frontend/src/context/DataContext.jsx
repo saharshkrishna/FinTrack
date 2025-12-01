@@ -152,6 +152,35 @@ export const DataProvider = ({ children }) => {
     }
   };
 
+    // ==================== Category & PaymentMode APIs ====================
+  const createCategory = async (categoryData) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/category`, categoryData);
+      const newCategory = response.data.newCategory;
+      setCategories((prev) => [...prev, newCategory]);
+      toast.success("Category added successfully");
+      return newCategory;
+    } catch (error) {
+      console.error("Error creating category:", error);
+      toast.error("Failed to add category");
+      throw error;
+    }
+  };
+
+  const createPaymentMode = async (paymentModeData) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/paymentMode`, paymentModeData);
+      const newPaymentMode = response.data.newPaymentMode;
+      setPaymentModes((prev) => [...prev, newPaymentMode]);
+      toast.success("Payment mode added successfully");
+      return newPaymentMode;
+    } catch (error) {
+      console.error("Error creating payment mode:", error);
+      toast.error("Failed to add payment mode");
+      throw error;
+    }
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -173,6 +202,9 @@ export const DataProvider = ({ children }) => {
         createLoan,
         updateLoan,
         deleteLoan,
+                // Category & PaymentMode operations
+        createCategory,
+        createPaymentMode,
       }}
     >
       {children}
