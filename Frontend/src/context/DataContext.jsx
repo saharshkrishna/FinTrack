@@ -44,6 +44,58 @@ export const DataProvider = ({ children }) => {
     fetchData();
   }, []);
 
+  // ==================== Party APIs ====================
+  const fetchParties = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/parties`);
+      setParties(response.data.parties || []);
+    } catch (err) {
+      console.error("Error fetching parties:", err);
+      toast.error("Failed to fetch parties");
+    }
+  };
+
+  const createParty = async (partyData) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/parties`, partyData);
+      const newParty = response.data.party;
+      setParties((prev) => [...prev, newParty]);
+      toast.success("Party added successfully");
+      return newParty;
+    } catch (error) {
+      console.error("Error creating party:", error);
+      toast.error("Failed to add party");
+      throw error;
+    }
+  };
+
+  const updateParty = async (id, updatedData) => {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/parties/${id}`, updatedData);
+      setParties((prevParties) =>
+        prevParties.map((party) => (party._id === id ? response.data.party : party))
+      );
+      toast.success("Party updated successfully");
+      return response.data.party;
+    } catch (error) {
+      console.error("Error updating party:", error);
+      toast.error("Failed to update party");
+      throw error;
+    }
+  };
+
+  const deleteParty = async (id) => {
+    try {
+      await axios.delete(`${API_BASE_URL}/parties/${id}`);
+      setParties((prevParties) => prevParties.filter((party) => party._id !== id));
+      toast.success("Party deleted successfully");
+    } catch (error) {
+      console.error("Error deleting party:", error);
+      toast.error("Failed to delete party");
+      throw error;
+    }
+  };
+
   // ==================== Transaction APIs ====================
   const fetchTransactions = async () => {
     try {
@@ -152,7 +204,17 @@ export const DataProvider = ({ children }) => {
     }
   };
 
-    // ==================== Category & PaymentMode APIs ====================
+  // ==================== Category APIs ====================
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/category`);
+      setCategories(response.data.category || []);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+      toast.error("Failed to fetch categories");
+    }
+  };
+
   const createCategory = async (categoryData) => {
     try {
       const response = await axios.post(`${API_BASE_URL}/category`, categoryData);
@@ -164,6 +226,44 @@ export const DataProvider = ({ children }) => {
       console.error("Error creating category:", error);
       toast.error("Failed to add category");
       throw error;
+    }
+  };
+
+  const updateCategory = async (id, updatedData) => {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/category/${id}`, updatedData);
+      setCategories((prevCategories) =>
+        prevCategories.map((category) => (category._id === id ? response.data.category : category))
+      );
+      toast.success("Category updated successfully");
+      return response.data.category;
+    } catch (error) {
+      console.error("Error updating category:", error);
+      toast.error("Failed to update category");
+      throw error;
+    }
+  };
+
+  const deleteCategory = async (id) => {
+    try {
+      await axios.delete(`${API_BASE_URL}/category/${id}`);
+      setCategories((prevCategories) => prevCategories.filter((category) => category._id !== id));
+      toast.success("Category deleted successfully");
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      toast.error("Failed to delete category");
+      throw error;
+    }
+  };
+
+  // ==================== Payment Mode APIs ====================
+  const fetchPaymentModes = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/paymentmode`);
+      setPaymentModes(response.data.paymentMode || []);
+    } catch (err) {
+      console.error("Error fetching payment modes:", err);
+      toast.error("Failed to fetch payment modes");
     }
   };
 
@@ -181,6 +281,33 @@ export const DataProvider = ({ children }) => {
     }
   };
 
+  const updatePaymentMode = async (id, updatedData) => {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/paymentMode/${id}`, updatedData);
+      setPaymentModes((prevPaymentModes) =>
+        prevPaymentModes.map((pm) => (pm._id === id ? response.data.paymentMode : pm))
+      );
+      toast.success("Payment mode updated successfully");
+      return response.data.paymentMode;
+    } catch (error) {
+      console.error("Error updating payment mode:", error);
+      toast.error("Failed to update payment mode");
+      throw error;
+    }
+  };
+
+  const deletePaymentMode = async (id) => {
+    try {
+      await axios.delete(`${API_BASE_URL}/paymentMode/${id}`);
+      setPaymentModes((prevPaymentModes) => prevPaymentModes.filter((pm) => pm._id !== id));
+      toast.success("Payment mode deleted successfully");
+    } catch (error) {
+      console.error("Error deleting payment mode:", error);
+      toast.error("Failed to delete payment mode");
+      throw error;
+    }
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -192,6 +319,11 @@ export const DataProvider = ({ children }) => {
         transactions,
         loading,
         error,
+        // Party operations
+        fetchParties,
+        createParty,
+        updateParty,
+        deleteParty,
         // Transaction operations
         fetchTransactions,
         createTransaction,
@@ -202,9 +334,16 @@ export const DataProvider = ({ children }) => {
         createLoan,
         updateLoan,
         deleteLoan,
-                // Category & PaymentMode operations
+        // Category operations
+        fetchCategories,
         createCategory,
+        updateCategory,
+        deleteCategory,
+        // PaymentMode operations
+        fetchPaymentModes,
         createPaymentMode,
+        updatePaymentMode,
+        deletePaymentMode,
       }}
     >
       {children}
