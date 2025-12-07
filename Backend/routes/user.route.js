@@ -24,13 +24,19 @@ router.get("/loanRe", controller.getLoanReEntries);
 
 // Add party
 router.post("/parties",controller.AddParty);
+router.put('/parties/:id', controller.updateParty);
+router.delete('/parties/:id', controller.deleteParty);
 router.get('/parties', controller.getParty);
 
 // Add Payment Mode
 router.post("/paymentMode", controller.AddPaymentMode);
+router.put('/paymentMode/:id', controller.updatePaymentMode);
+router.delete('/paymentMode/:id', controller.deletePaymentMode);
 
 // Add Category
 router.post("/category", controller.AddCategory);
+router.put('/category/:id', controller.updateCategory);
+router.delete('/category/:id', controller.deleteCategory);
 
 // Route to get all categories
 router.get("/category", controller.getCategory);
