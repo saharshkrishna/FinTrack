@@ -1,12 +1,8 @@
-import { useState } from 'react';
 import { FiPlus, FiBook, FiSettings, FiMenu, FiX } from 'react-icons/fi';
+import { useSidebar } from '../context/SidebarContext';
 
 const Sidebar = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-  };
+  const { isCollapsed, toggleSidebar } = useSidebar();
 
   return (
     <>
