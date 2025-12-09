@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { DataProvider } from "./context/DataContext";
+import { SidebarProvider } from './context/SidebarContext';
 import Filters from "./components/Filters";
 import SearchAndActions from "./components/SearchAndActnbtn";
 import Summary from "./components/Summary";
@@ -35,6 +36,7 @@ function App() {
 
   return (
     <DataProvider>
+            <SidebarProvider>
     <Router>
       <div>
         {/* Header component (common for all routes) */}
@@ -158,6 +160,7 @@ function App() {
         </Layout>
       </div>
     </Router>
+                    </SidebarProvider>
     </DataProvider>
   );
 }
