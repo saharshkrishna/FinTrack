@@ -38,7 +38,6 @@ const AddEntryModal = ({ entryType, onClose }) => {
     <div
       id="modal-overlay"
       className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
-      onClick={onClose}
     >
       <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-lg"
         onClick={(e) => e.stopPropagation()}
