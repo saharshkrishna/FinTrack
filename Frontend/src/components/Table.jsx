@@ -21,6 +21,16 @@ const Table = ({ tableData, updateEntry, onDeleteSelected, }) => {
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
   const currentRows = sortedTableData.slice(indexOfFirstRow, indexOfLastRow);
 
+  const getFileIcon = (fileName) => {
+    if (!fileName) return "📎";
+    const extension = fileName.split('.').pop().toLowerCase();
+    if (['pdf'].includes(extension)) return "📄";
+    if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(extension)) return "🖼️";
+    if (['xls', 'xlsx', 'csv'].includes(extension)) return "📊";
+    if (['doc', 'docx', 'txt'].includes(extension)) return "📝";
+    return "📎";
+  };
+
   // Handle row click to open details modal
   const handleRowClick = (entry) => {
     setSelectedEntry(entry);
@@ -79,7 +89,6 @@ const Table = ({ tableData, updateEntry, onDeleteSelected, }) => {
       return [];
     });
   };
-  
   
   
 
@@ -152,12 +161,23 @@ const Table = ({ tableData, updateEntry, onDeleteSelected, }) => {
               
               
               <td className="py-2 px-3 w-[120px] text-[13px]">
-                 {entry.bills && entry.bills.length > 0 ? (
-                <div className="flex items-center gap-1">
-                  <span>📎</span> {/* Icon for attached bills */}
-                  <span className="text-sm text-gray-500">({entry.bills.length})</span> {/* Number of files */}
-                 </div>
-                  ) : null}
+                {(() => {
+                  const filesArray = entry.files || entry.bills || [];
+                  if (filesArray.length > 0) {
+                    const firstFile = filesArray[0];
+                    const fileName = typeof firstFile === 'string' ? firstFile : (firstFile.name || firstFile.filename || '');
+                    const icon = getFileIcon(fileName);
+                    return (
+                      <div className="flex items-center gap-1">
+                        <span className="text-lg" title={fileName}>{icon}</span>
+                        {filesArray.length > 1 && (
+                          <span className="text-sm font-medium text-gray-600">+{filesArray.length - 1}</span>
+                        )}
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </td>
               
               <td

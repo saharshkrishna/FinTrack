@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { FiX, FiPlus } from 'react-icons/fi';
 import PartyNameModal from './PartyModal';
+import { useContext } from 'react';
+import { DataContext } from '../../context/DataContext';
 
 const LoanModal = ({ isOpen, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -24,7 +26,7 @@ const LoanModal = ({ isOpen, onClose, onSubmit }) => {
 
   const [error, setError] = useState('');
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
-  const [parties, setParties] = useState([]);
+  const { parties } = useContext(DataContext);
   const [files, setFiles] = useState([]);
 
   const handleFileChange = (e) => {
@@ -98,7 +100,6 @@ const LoanModal = ({ isOpen, onClose, onSubmit }) => {
   };
 
   const handleAddPartyName = (partyData) => {
-    setParties((prev) => [...prev, partyData.partyName]);
     setFormData((prev) => ({
       ...prev,
       partyName: partyData.partyName,
@@ -108,8 +109,14 @@ const LoanModal = ({ isOpen, onClose, onSubmit }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-end z-40">
-      <div className="bg-white w-1/2 h-full overflow-hidden">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex justify-end z-40"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white w-1/2 h-full overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="sticky top-0 bg-white z-10 p-6 border-b">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">New Loan Entry</h2>
@@ -302,9 +309,9 @@ const LoanModal = ({ isOpen, onClose, onSubmit }) => {
                   className="w-1/3 p-2 border rounded-lg"
                 >
                   <option value="">Search or Select</option>
-                  {parties.map((party, index) => (
-                    <option key={index} value={party}>
-                      {party}
+                  {parties?.map((party, index) => (
+                    <option key={index} value={party.partyName}>
+                      {party.partyName}
                     </option>
                   ))}
                 </select>

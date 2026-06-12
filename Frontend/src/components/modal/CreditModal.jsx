@@ -23,8 +23,6 @@ const CreditModal = ({ onClose, type, onSubmit, initialData }) => {
   const [isAddingModalOpen, setIsAddingModalOpen] = useState(false);
   const [entryType, setEntryType] = useState("");
   const { parties, categories, loading, } = useContext(DataContext);
-  const [ setParties] = useState([]);
-  const [ setCategories] = useState([]);
   const [files, setFiles] = useState([]);
 
    if (loading) return <div>Loading...</div>;
@@ -175,7 +173,7 @@ const CreditModal = ({ onClose, type, onSubmit, initialData }) => {
   onClick={onClose} // Close modal when clicking outside
 >
   <div
-    className="bg-white p-6 rounded-lg w-1/2"
+    className="bg-white p-4 sm:p-6 rounded-lg w-full sm:w-11/12 md:w-3/4 lg:w-1/2 max-h-screen overflow-y-auto"
     onClick={(e) => e.stopPropagation()} // Prevent clicks inside the modal from closing it
   >
         <div className="sticky top-0 bg-white z-10 p-6 border-b">

@@ -13,14 +13,10 @@ const partyRoutes = require('./routes/party.routes');
 const paymentModeRoutes = require('./routes/payment.routes');
 const transactionRoutes = require('./routes/transaction.routes');
 const categoryRoutes = require('./routes/category.routes');
+const authRoutes = require('./routes/auth.routes');
 const fileRoutes = require('./routes/file.routes');
 //compiling .env file
 dotenv.config();
-
-// Import auth routes
-const authRoutes = require('./routes/auth.routes');
-app.use('/api/auth', authRoutes);
-
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
 try {
@@ -58,6 +54,7 @@ app.use('/api/user/parties', partyRoutes);
 app.use('/api/user/paymentMode', paymentModeRoutes);
 app.use('/api/user/category', categoryRoutes);
 app.use('/api/user/uploads', fileRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 //function to start the server with async/await and error handling
 const StartServer = async (MONGODB_URL) => {

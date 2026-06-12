@@ -12,7 +12,7 @@
   "dependencies": {
     "axios": "^1.7.9",
     "jwt-decode": "^4.0.0",
-    "mathjs": "^14.0.1",
+    "mathjs": "^15.2.0",
     "prop-types": "^15.8.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -27,6 +27,7 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react-swc": "^4.2.2",
     "autoprefixer": "^10.4.17",
+    "baseline-browser-mapping": "^2.10.35",
     "eslint": "^9.9.1",
     "eslint-plugin-react": "^7.35.0",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",

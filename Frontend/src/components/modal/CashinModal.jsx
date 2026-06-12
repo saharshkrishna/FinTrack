@@ -174,7 +174,7 @@ const CashinModal = ({ onClose, type, onSubmit, initialData }) => {
       onClick={onClose}
     >
       <div
-        className="bg-white p-6 rounded-lg w-1/2"
+        className="bg-white p-4 sm:p-6 rounded-lg w-full sm:w-11/12 md:w-3/4 lg:w-1/2 max-h-screen overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 bg-white z-10 p-6 border-b">

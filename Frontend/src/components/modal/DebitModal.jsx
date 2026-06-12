@@ -3,6 +3,8 @@ import PropTypes from "prop-types";
 import { FiX, FiPlus } from "react-icons/fi";
 import AddingModal from "./AddingModal";
 import PartyNameModal from "./PartyModal";
+import { useContext } from "react";
+import { DataContext } from "../../context/DataContext";
 
 const DebitModal = ({ onClose, type, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -27,8 +29,7 @@ const DebitModal = ({ onClose, type, onSubmit }) => {
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
   const [isAddingModalOpen, setIsAddingModalOpen] = useState(false);
   const [addingModalType, setAddingModalType] = useState(""); // 'category' or 'paymentMode'
-  const [parties, setParties] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const { parties, categories } = useContext(DataContext);
 
   const handleAmountChange = (e) => {
     const value = e.target.value;
@@ -57,6 +58,14 @@ const DebitModal = ({ onClose, type, onSubmit }) => {
       }));
     }
   };
+
+const [files, setFiles] = useState([]);
+
+const handleFileChange = (e) => {
+  const selectedFiles = Array.from(e.target.files);
+  setFiles(selectedFiles);
+};
+
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -92,8 +101,14 @@ const DebitModal = ({ onClose, type, onSubmit }) => {
 
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-end z-40">
-      <div className="bg-white w-1/2 h-full overflow-hidden">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex justify-end z-40"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white p-4 sm:p-6 rounded-lg w-full sm:w-11/12 md:w-3/4 lg:w-1/2 max-h-screen overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="sticky top-0 bg-white z-10 p-6 border-b">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">
@@ -105,8 +120,8 @@ const DebitModal = ({ onClose, type, onSubmit }) => {
           </div>
         </div>
 
-        <div className="overflow-y-auto h-[calc(100vh-80px)] p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+       <div className="overflow-y-auto h-[calc(100vh-80px)] p-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* <div className="flex space-x-4">
               <button
                 type="button"
@@ -182,112 +197,130 @@ const DebitModal = ({ onClose, type, onSubmit }) => {
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Party Name (Contact)</label>
-              <div className="flex gap-2">
-                <select
+            <div className="grid grid-cols-3 gap-4">
+  {/* Party Name Selection */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700">Party Name (Contact)</label>
+    <div className="flex gap-2">
+    <select
                   value={formData.partyName}
                   onChange={(e) => setFormData((prev) => ({ ...prev, partyName: e.target.value }))}
-                  className="w-1/3 p-2 border rounded-lg"
+                  className="w-full p-2 border rounded-lg"
                 >
-                  <option value="">Search or Select</option>
-                  {parties.map((party, index) => (
-                    <option key={index} value={party}>
-                      {party}
+                  <option value="">Select</option>
+                  {parties?.map((party, index) => (
+          <option key={index} value={party.partyName}>
+            {party.partyName}
+                    </option>
+                  ))}
+              </select>
+      <button
+        type="button"
+        onClick={() => setIsPartyModalOpen(true)}
+        className="px-4 py-2 bg-blue-500 text-white rounded-lg"
+      >
+        <FiPlus />
+      </button>
+    </div>
+  </div>
+
+  {/* Category Selection */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700">Category</label>
+    <div className="flex gap-2">
+    <select
+                  value={formData.category}
+                  placeholder="Add category"
+                  onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
+                  className="w-full p-2 border rounded-lg"
+                >
+                  <option value="">Select</option>
+                  {categories?.map((categoryObj) => (
+          <option key={categoryObj._id} value={categoryObj.category}>
+            {categoryObj.category}
                     </option>
                   ))}
                 </select>
                 <button
-                  type="button"
-                  onClick={() => setIsPartyModalOpen(true)}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-                >
-                  <FiPlus />
-                </button>
-              </div>
-            </div>
+        type="button"
+        onClick={() => handleOpenModal("category")}
+        
+        className="px-4 py-2 bg-blue-500 text-white rounded-lg"
+      >
+        <FiPlus />
+      </button>
+    </div>
+  </div>
+  </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Remarks</label>
-              <input
+              <label className="block text-sm font-small text-gray-700">Remarks</label>
+              <textarea
                 type="text"
                 placeholder="e.g. Enter Details (Name, Bill No, Item Name, Quantity etc)"
                 value={formData.remarks}
                 onChange={(e) => setFormData((prev) => ({ ...prev, remarks: e.target.value }))}
-                className="w-3/4 p-2 border rounded-lg"
+                className="w-3/4 h-[100px] p-2 border rounded-lg"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Category</label>
-              <div className="flex gap-2">
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-                  className="w-1/3 p-2 border rounded-lg"
-                >
-                  <option value="">Search or Select</option>
-                  {categories.map((category, index) => (
-                    <option key={index} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAddingModalType("category");
-                    setIsAddingModalOpen(true);
-                  }}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-                >
-                  <FiPlus />
-                </button>
-              </div>
-            </div>
 
-
-             {/* Attach Bills Button */}
-             <div className="flex items-center space-x-2">
+<div className="flex justify-between items-center mt-4">
+            <div className="flex items-center gap-3">
+              <input
+                type="file"
+                id="fileInput"
+                style={{ display: "none" }}
+                onChange={handleFileChange}
+                multiple
+              />
               <button
                 type="button"
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg"
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg shrink-0"
+                onClick={() => document.getElementById("fileInput").click()}
               >
                 📎 Attach Bills
               </button>
-              <span className="text-sm text-gray-500">
-              </span>
+              {files.length > 0 && (
+                <span className="text-sm text-gray-500 whitespace-nowrap">
+                  ({files.length} files selected)
+                </span>
+              )}
             </div>
 
-            <div className="flex space-x-4">
-              <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-lg">
+            <div>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-green-600 text-white rounded-lg"
+              >
                 Save
               </button>
             </div>
-          </form>
-        </div>
+          </div>
+        </form>
+
+        {isPartyModalOpen && (
+          <PartyNameModal
+            onClose={() => setIsPartyModalOpen(false)}
+            onAdd={handleAddPartyName}
+          />
+        )}
+
+        {isAddingModalOpen && (
+          <AddingModal
+            title={`Add New ${addingModalType}`}
+            placeholder={`Enter new ${addingModalType}`}
+            onAdd={(newValue) => {
+              if (addingModalType === "category") {
+                handleAddCategory(newValue);
+              }
+              setIsAddingModalOpen(false);
+            }}
+            onClose={() => setIsAddingModalOpen(false)}
+          />
+        )}
       </div>
-
-      {isPartyModalOpen && (
-        <PartyNameModal
-          onClose={() => setIsPartyModalOpen(false)}
-          onAdd={handleAddPartyName}
-        />
-      )}
-
-      {isAddingModalOpen && (
-        <AddingModal
-          title={`Add New ${addingModalType}`}
-          placeholder={`Enter new ${addingModalType}`}
-          onAdd={(newValue) => {
-            if (addingModalType === "category") {
-              handleAddCategory(newValue);
-            }
-            setIsAddingModalOpen(false);
-          }}
-          onClose={() => setIsAddingModalOpen(false)}
-        />
-      )}
+    </div>
     </div>
   );
 };

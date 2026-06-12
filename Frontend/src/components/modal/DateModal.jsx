@@ -27,8 +27,14 @@ const DateSelectionModal = ({ isOpen, onClose, onApply, startDate, endDate }) =>
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-40">
-      <div className="bg-white p-6 rounded-lg w-1/3">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-40"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white p-6 rounded-lg w-1/3"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 className="text-xl font-semibold mb-4">Select Date</h2>
 
         {/* Date Option Selection */}

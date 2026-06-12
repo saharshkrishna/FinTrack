@@ -1,4 +1,4 @@
-const User = require('../MongoDb/models/User');
+const User = require('../MongoDb/models/userModels/User');
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';

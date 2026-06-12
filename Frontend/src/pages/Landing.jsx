@@ -121,11 +121,11 @@ export default function Landing() {
   const Dashboard = () => {
     // Calculate stats from actual transactions
     const totalExpenses = transactions.reduce((sum, t) => {
-      return t.type === 'expense' ? sum + (t.amount || 0) : sum;
+      return t.type === 'cashout' ? sum + (t.amount || 0) : sum;
     }, 0);
 
     const totalIncome = transactions.reduce((sum, t) => {
-      return t.type === 'income' ? sum + (t.amount || 0) : sum;
+      return t.type === 'cashin' ? sum + (t.amount || 0) : sum;
     }, 0);
 
     const netBalance = totalIncome - totalExpenses;

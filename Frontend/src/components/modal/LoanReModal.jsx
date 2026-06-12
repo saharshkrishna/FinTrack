@@ -79,8 +79,14 @@ const LoanReModal = ({ isOpen, onClose, onSubmit, loans = [] }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-end z-40">
-      <div className="bg-white w-1/2 h-full overflow-hidden">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex justify-end z-40"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white w-1/2 h-full overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="sticky top-0 bg-white z-10 p-6 border-b">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Loan Reimbursement Entry</h2>

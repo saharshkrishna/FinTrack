@@ -1,12 +1,13 @@
-import { useState } from "react";
-import axios from "axios";
+import { useState, useContext } from "react";
 import PropTypes from "prop-types";
+import { DataContext } from "../../context/DataContext";
 
 const PartyNameModal = ({ onClose, onAddParty }) => {
   const [partyName, setPartyName] = useState("");
   const [phone, setPhone] = useState("");
   const [partyType, setPartyType] = useState("Supplier");
   const [error, setError] = useState("");
+  const { createParty } = useContext(DataContext);
 
   // Function to add party and send it to backend
   const handleAddParty = async () => {
@@ -16,18 +17,15 @@ const PartyNameModal = ({ onClose, onAddParty }) => {
     }
   
     try {
-      const response = await axios.post("http://localhost:5000/api/user/parties", {
+      const newParty = await createParty({
         partyName: partyName.trim(), // Ensure no leading/trailing spaces
         phone: phone.trim() || "",   // Default empty string if no phone
         partyType,
       });
   
-      const newParty = response.data.partyName;
+      // Pass the new party name to the parent
+      onAddParty(newParty.partyName);
   
-      // Pass the new party to the parent
-      onAddParty(newParty);
-  
-      alert("Party added successfully!");
       setPartyName("");
       setPhone("");
       setPartyType("Supplier");
@@ -37,8 +35,6 @@ const PartyNameModal = ({ onClose, onAddParty }) => {
       console.error("Error adding party:", error);
       if (error.response && error.response.data.message === "Party already exists") {
         setError("A party with this name already exists.");
-      } else {
-        alert("Failed to add party. Please try again.");
       }
     }
   };
@@ -50,7 +46,10 @@ const PartyNameModal = ({ onClose, onAddParty }) => {
       className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
       onClick={onClose}
     >
-      <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-lg">
+      <div 
+        className="bg-white p-6 rounded-lg w-full max-w-md shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 className="text-xl font-semibold mb-4">Add Party</h2>
         <input
           type="text"
