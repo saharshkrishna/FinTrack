@@ -3,6 +3,7 @@
 const mongoose = require('mongoose');
 
 const loanReSchema = new mongoose.Schema({
+  businessId: { type: mongoose.Schema.Types.ObjectId, ref: 'Business', required: true, index: true },
   date: { type: String, required: true },
   loanId: { type: mongoose.Schema.Types.ObjectId, ref: 'Loan', required: true },
   loanTitle: { type: String },
@@ -16,5 +17,8 @@ const loanReSchema = new mongoose.Schema({
   paymentMode: { type: String },
   type: { type: String, default: 'LoanRe' }
 }, { timestamps: true });
+
+loanReSchema.index({ businessId: 1, loanId: 1 });
+loanReSchema.index({ businessId: 1, date: -1 });
 
 module.exports = mongoose.model('LoanRe', loanReSchema);

@@ -1,6 +1,7 @@
 // backend/MongoDb/models userModels/Loan.js
 const mongoose = require('mongoose');
 const loanSchema = new mongoose.Schema({
+  businessId: { type: mongoose.Schema.Types.ObjectId, ref: 'Business', required: true, index: true },
   date: { type: String, required: true }, // YYYY-MM-DD
   loanTitle: { type: String, required: true },
   loanAmount: { type: Number, required: true },
@@ -18,4 +19,7 @@ const loanSchema = new mongoose.Schema({
   paymentMode: { type: String, default: 'Cash' },
   files: [{ type: String }]
 }, { timestamps: true });
+
+loanSchema.index({ businessId: 1, date: -1 });
+
 module.exports = mongoose.model('Loan', loanSchema);

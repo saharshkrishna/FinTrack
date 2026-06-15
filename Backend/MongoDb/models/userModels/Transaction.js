@@ -2,7 +2,12 @@ const mongoose = require('mongoose');
 
 // Define the schema for the transaction
 const transactionSchema = new mongoose.Schema({
-
+    businessId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Business',
+        required: true,
+        index: true
+    },
     type: {
         type: String,
         required: true,
@@ -39,6 +44,8 @@ const transactionSchema = new mongoose.Schema({
     timestamps: true, // Automatically add `createdAt` and `updatedAt` fields
 });
 
+transactionSchema.index({ businessId: 1, date: -1 });
+transactionSchema.index({ businessId: 1, type: 1 });
 
 // Create the model
 const Transaction = mongoose.model('Transaction', transactionSchema);

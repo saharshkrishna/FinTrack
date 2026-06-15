@@ -2,8 +2,11 @@ const mongoose = require("mongoose");
 
 
 const PaymentModeSchema = new mongoose.Schema({
-    paymentMode: { type: String, unique: true, required: true }
+    businessId: { type: mongoose.Schema.Types.ObjectId, ref: 'Business', required: true, index: true },
+    paymentMode: { type: String, required: true }
   });
+
+PaymentModeSchema.index({ businessId: 1, paymentMode: 1 }, { unique: true });
 
 const PaymentMode = mongoose.model("PaymentMode", PaymentModeSchema);
 
