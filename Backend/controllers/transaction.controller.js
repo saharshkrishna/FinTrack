@@ -18,6 +18,7 @@ exports.createTransaction = async (req, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
     const newTransaction = new Transaction({
+      businessId: req.businessId,
       type,
       date,
       amount,
@@ -43,7 +44,7 @@ exports.createTransaction = async (req, res) => {
 
 exports.getAllTransactions = async (req, res) => {
   try {
-    const transactions = await Transaction.find().sort({ createdAt: -1 });
+    const transactions = await Transaction.find({ businessId: req.businessId }).sort({ createdAt: -1 });
     res.status(200).json({ transactions });
   } catch (err) {
     console.error("Error fetching transactions:", err);
@@ -59,7 +60,7 @@ exports.getTransactionsByType = async (req, res) => {
     if (["Cash In", "Cash Out"].includes(type) === false) {
       return res.status(400).json({ error: "Invalid transaction type" });
     }
-    const transactions = await Transaction.find({ type });
+    const transactions = await Transaction.find({ type, businessId: req.businessId });
     res.status(200).json({ transactions });
   } catch (err) {
     res
@@ -74,8 +75,8 @@ exports.updateTransaction = async (req, res) => {
     const updateData = req.body;
     console.log("Updating transaction with ID:", id);
     console.log("Update data:", updateData);
-    const updatedTransaction = await Transaction.findByIdAndUpdate(
-      id,
+    const updatedTransaction = await Transaction.findOneAndUpdate(
+      { _id: id, businessId: req.businessId },
       updateData,
       { new: true }
     );
@@ -101,7 +102,7 @@ exports.deleteTransaction = async (req, res) => {
     if (!ids || ids.length === 0) {
       return res.status(400).json({ message: "No IDs provided for deletion." });
     }
-    await Transaction.deleteMany({ _id: { $in: ids } });
+    await Transaction.deleteMany({ _id: { $in: ids }, businessId: req.businessId });
     res.status(200).json({ message: "Transactions deleted successfully." });
   } catch (error) {
     console.error("Error deleting transactions:", error);

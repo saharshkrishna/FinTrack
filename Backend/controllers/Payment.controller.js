@@ -14,14 +14,14 @@ const PaymentMode = require('../MongoDb/models/userModels/Payment');
 
     try {
         console.log("Checking if payment mode already exists...");
-        const existingMode = await PaymentMode.findOne({ paymentMode }); // ✅ Fixed incorrect field name
+        const existingMode = await PaymentMode.findOne({ paymentMode, businessId: req.businessId }); // ✅ Fixed incorrect field name
         if (existingMode) {
             console.warn("Payment mode already exists:", existingMode);
             return res.status(400).json({ message: "Payment mode already exists" });
         }
 
         console.log("Saving new payment mode...");
-        const newMode = new PaymentMode({ paymentMode });
+        const newMode = new PaymentMode({ paymentMode, businessId: req.businessId });
         await newMode.save();
         console.log("Payment mode added successfully:", newMode);
 
@@ -34,7 +34,7 @@ const PaymentMode = require('../MongoDb/models/userModels/Payment');
 exports.getPaymentModes = async (req, res) => {
     try {
         console.log("Fetching all payment modes...");
-        const paymentModes = await PaymentMode.find({});
+        const paymentModes = await PaymentMode.find({ businessId: req.businessId });
         console.log("Fetched Payment Modes:", paymentModes);
         res.status(200).json({ paymentMode: paymentModes });
     } catch (error) {

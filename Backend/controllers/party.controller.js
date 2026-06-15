@@ -9,12 +9,13 @@ const AddParty = async (req, res) => {
       return res.status(400).json({ message: "Enter the required fields" });
     }
 
-    const existingParty = await Party.findOne({ partyName: partyName.trim() });
+    const existingParty = await Party.findOne({ partyName: partyName.trim(), businessId: req.businessId });
     if (existingParty) {
       return res.status(400).json({ message: "Party already exists" });
     }
 
     const newParty = new Party({
+      businessId: req.businessId,
       partyName: partyName.trim(),
       phone: phone || "",
       partyType,
@@ -40,7 +41,7 @@ const AddParty = async (req, res) => {
 // Get Party Function
 const getParty = async (req, res) => {
   try {
-    const parties = await Party.find();
+    const parties = await Party.find({ businessId: req.businessId });
     res.status(200).json({
       success: true,
       message: 'Parties retrieved successfully',

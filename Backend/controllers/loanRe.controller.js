@@ -26,6 +26,7 @@ exports.createLoanRe = async (req, res) => {
 
     // ✅ Construct and save LoanRe entry
     const newLoanRe = new LoanRe({
+      businessId: req.businessId,
       date,
       loanId,
       loanTitle,
@@ -57,7 +58,7 @@ exports.createLoanRe = async (req, res) => {
 
 exports.getLoanReEntries = async (req, res) => {
   try {
-    const entries = await LoanRe.find().sort({ createdAt: -1 });
+    const entries = await LoanRe.find({ businessId: req.businessId }).sort({ createdAt: -1 });
     res.status(200).json({ loanReEntries: entries });
   } catch (err) {
     console.error("LoanRe GET error:", err);

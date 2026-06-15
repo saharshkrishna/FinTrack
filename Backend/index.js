@@ -46,13 +46,15 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+const businessMiddleware = require('./middleware/business');
+
 // Mount all route files with their respective API paths
-app.use('/api/user/transactions', transactionRoutes);
-app.use('/api/user/loans', loanRoutes);
-app.use('/api/user/loanRe', loanReRoutes);
-app.use('/api/user/parties', partyRoutes);
-app.use('/api/user/paymentMode', paymentModeRoutes);
-app.use('/api/user/category', categoryRoutes);
+app.use('/api/user/transactions', businessMiddleware, transactionRoutes);
+app.use('/api/user/loans', businessMiddleware, loanRoutes);
+app.use('/api/user/loanRe', businessMiddleware, loanReRoutes);
+app.use('/api/user/parties', businessMiddleware, partyRoutes);
+app.use('/api/user/paymentMode', businessMiddleware, paymentModeRoutes);
+app.use('/api/user/category', businessMiddleware, categoryRoutes);
 app.use('/api/user/uploads', fileRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

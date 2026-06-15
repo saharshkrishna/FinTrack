@@ -23,6 +23,7 @@ const Loan = require('../MongoDb/models/userModels/Loan');
 
         // Create new loan entry
         const newLoan = new Loan({
+            businessId: req.businessId,
             date,
             loanTitle,
             loanAmount,
@@ -44,7 +45,7 @@ const Loan = require('../MongoDb/models/userModels/Loan');
 
 exports.getAllLoans = async (req, res) => {
     try {
-        const loans = await Loan.find().sort({ createdAt: -1 });
+        const loans = await Loan.find({ businessId: req.businessId }).sort({ createdAt: -1 });
         res.status(200).json({ loans });
     } catch (err) {
         console.error("Error fetching loans:", err);
@@ -55,7 +56,7 @@ exports.getAllLoans = async (req, res) => {
 exports.getLoanById = async (req, res) => {
     try {
         const { id } = req.params;
-        const loan = await Loan.findById(id);
+        const loan = await Loan.findOne({ _id: id, businessId: req.businessId });
 
         if (!loan) {
             return res.status(404).json({ error: "Loan not found" });
@@ -77,7 +78,7 @@ exports.updateLoan = async (req, res) => {
 
         // Recalculate values if interest rate or amount is updated
         if (updateData.loanAmount || updateData.interestRate || updateData.loanTerm) {
-            const loan = await Loan.findById(id);
+            const loan = await Loan.findOne({ _id: id, businessId: req.businessId });
             if (!loan) return res.status(404).json({ error: "Loan not found" });
 
             const loanAmount = updateData.loanAmount || loan.loanAmount;
@@ -93,7 +94,7 @@ exports.updateLoan = async (req, res) => {
             updateData.dueDate = dueDate.toISOString().split("T")[0];
         }
 
-        const updatedLoan = await Loan.findByIdAndUpdate(id, updateData, { new: true });
+        const updatedLoan = await Loan.findOneAndUpdate({ _id: id, businessId: req.businessId }, updateData, { new: true });
 
         if (!updatedLoan) {
             return res.status(404).json({ error: "Loan not found" });
@@ -113,7 +114,7 @@ exports.deleteLoan = async (req, res) => {
             return res.status(400).json({ message: "No IDs provided for deletion." });
         }
   
-        await Loan.deleteMany({ _id: { $in: ids } });
+        await Loan.deleteMany({ _id: { $in: ids }, businessId: req.businessId });
   
         res.status(200).json({ message: "Loans deleted successfully." });
     } catch (error) {

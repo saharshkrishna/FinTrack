@@ -12,14 +12,14 @@ exports.AddCategory = async (req, res) => {
 
     try {
         console.log("Checking if category already exists...");
-        const existingCategory = await Category.findOne({ category });
+        const existingCategory = await Category.findOne({ category, businessId: req.businessId });
         if (existingCategory) {
             console.warn("Category already exists:", existingCategory);
             return res.status(400).json({ message: "Category already exists" });
         }
 
         console.log("Saving new category...");
-        const newCategory = new Category({ category });
+        const newCategory = new Category({ category, businessId: req.businessId });
         await newCategory.save();
         console.log("Category added successfully:", newCategory);
 
@@ -33,7 +33,7 @@ exports.AddCategory = async (req, res) => {
 exports.getCategory = async (req, res) => {
     try {
         console.log("Fetching all categories...");
-        const categories = await Category.find({});
+        const categories = await Category.find({ businessId: req.businessId });
         console.log("Fetched Categories:", categories);
         res.status(200).json({ category: categories }); // ✅ Ensure correct response key
     } catch (error) {
