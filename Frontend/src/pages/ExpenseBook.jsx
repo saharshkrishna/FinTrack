@@ -94,7 +94,8 @@ const ExpenseBook = () => {
   const updateEntry = async (updatedEntry) => {
     console.log("Updated Entry in updateEntry:", updatedEntry);
     try {
-      await updateTransaction(updatedEntry.id, updatedEntry);
+      const entryId = updatedEntry._id || updatedEntry.id;
+      await updateTransaction(entryId, updatedEntry);
       console.log("Table Data Updated Successfully");
     } catch (error) {
       console.error("Error updating entry:", error);

@@ -56,7 +56,61 @@ const getParty = async (req, res) => {
   }
 };
 
+// Update Party Function
+const updateParty = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { partyName, phone, partyType } = req.body;
+
+    const updatedParty = await Party.findOneAndUpdate(
+      { _id: id, businessId: req.businessId },
+      { partyName: partyName?.trim(), phone, partyType },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedParty) {
+      return res.status(404).json({ success: false, message: 'Party not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Party updated successfully',
+      party: updatedParty
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating party',
+      error: error.message
+    });
+  }
+};
+
+// Delete Party Function
+const deleteParty = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deleted = await Party.findOneAndDelete({ _id: id, businessId: req.businessId });
+
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'Party not found' });
+    }
+
+    res.status(200).json({ success: true, message: 'Party deleted successfully' });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting party',
+      error: error.message
+    });
+  }
+};
+
+
 module.exports = {
   AddParty,
-  getParty
+  getParty,
+  updateParty,
+  deleteParty
 };

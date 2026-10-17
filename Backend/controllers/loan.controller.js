@@ -107,19 +107,23 @@ exports.updateLoan = async (req, res) => {
 };
 
 exports.deleteLoan = async (req, res) => {
-    const { ids } = req.body; // IDs of loans to delete
-  
+    const { id } = req.params; // Single loan ID from URL param
+
     try {
-        if (!ids || ids.length === 0) {
-            return res.status(400).json({ message: "No IDs provided for deletion." });
+        if (!id) {
+            return res.status(400).json({ message: "No ID provided for deletion." });
         }
-  
-        await Loan.deleteMany({ _id: { $in: ids }, businessId: req.businessId });
-  
-        res.status(200).json({ message: "Loans deleted successfully." });
+
+        const deleted = await Loan.findOneAndDelete({ _id: id, businessId: req.businessId });
+
+        if (!deleted) {
+            return res.status(404).json({ message: "Loan not found." });
+        }
+
+        res.status(200).json({ message: "Loan deleted successfully." });
     } catch (error) {
-        console.error("Error deleting loans:", error);
-        res.status(500).json({ message: "Failed to delete loans." });
+        console.error("Error deleting loan:", error);
+        res.status(500).json({ message: "Failed to delete loan." });
     }
 };
 

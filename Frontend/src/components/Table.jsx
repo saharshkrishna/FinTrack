@@ -5,7 +5,6 @@ import LoanEntryModal from "./modal/LoanEntryDetails"; // Import the LoanEntryDe
 import Pagination from "./Pagination";
 
 const Table = ({ tableData, updateEntry, onDeleteSelected, }) => {
-  ("Table Data Passed to Table Component:", tableData);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [isEntryDetailsOpen, setIsEntryDetailsOpen] = useState(false);
   const [isLoanEntryModalOpen, setIsLoanEntryModalOpen] = useState(false); // State for LoanEntryModal
@@ -14,7 +13,12 @@ const Table = ({ tableData, updateEntry, onDeleteSelected, }) => {
   const rowsPerPage = 25; // Number of rows per page
 
   // Sort table data so that new entries appear at the top
-  const sortedTableData = [...tableData].sort((a, b) => b.id - a.id);
+  const sortedTableData = [...tableData].sort((a, b) => {
+    if (a.date && b.date) {
+      return new Date(b.date) - new Date(a.date);
+    }
+    return (b.id || 0) - (a.id || 0);
+  });
 
   // Pagination logic
   const indexOfLastRow = currentPage * rowsPerPage;
@@ -147,10 +151,9 @@ const Table = ({ tableData, updateEntry, onDeleteSelected, }) => {
           {/* Row Checkbox */}
           <input
             type="checkbox"
-            checked={selectedRows.includes(entry._id)}
-            onChange={() => handleRowSelect(entry._id)}
+            checked={selectedRows.includes(entry._id || entry.id)}
+            onChange={() => handleRowSelect(entry._id || entry.id)}
           />
-          {(`Checkbox for ID ${entry.id} is checked:`, selectedRows.includes(entry.id))}
         </td>
               <td className="py-2 px-3 w-[120px] text-[13px]">
                 <div>{entry.date}</div>

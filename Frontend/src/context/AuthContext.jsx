@@ -23,16 +23,28 @@ export const AuthProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUser(response.data.user);
+      if (response.data.user?.businessId) {
+        localStorage.setItem('businessId', response.data.user.businessId);
+      }
     } catch (error) {
       localStorage.removeItem('token');
+      localStorage.removeItem('businessId');
     } finally {
       setLoading(false);
     }
   };
 
-  const login = async (email, password) => {
-    const response = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+  const login = async (identifier, password) => {
+    const response = await axios.post('http://localhost:5000/api/auth/login', {
+      identifier,
+      email: identifier,
+      business_id: identifier,
+      password
+    });
     localStorage.setItem('token', response.data.token);
+    if (response.data.user?.businessId) {
+      localStorage.setItem('businessId', response.data.user.businessId);
+    }
     setUser(response.data.user);
     return response.data;
   };
@@ -40,12 +52,16 @@ export const AuthProvider = ({ children }) => {
   const signup = async (name, email, password) => {
     const response = await axios.post('http://localhost:5000/api/auth/signup', { name, email, password });
     localStorage.setItem('token', response.data.token);
+    if (response.data.user?.businessId) {
+      localStorage.setItem('businessId', response.data.user.businessId);
+    }
     setUser(response.data.user);
     return response.data;
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('businessId');
     setUser(null);
   };
 

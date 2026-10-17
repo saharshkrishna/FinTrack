@@ -2,7 +2,7 @@ import { useState, useContext } from "react";
 import PropTypes from "prop-types";
 import { DataContext } from "../../context/DataContext";
 
-const AddEntryModal = ({ entryType, onClose }) => {
+const AddEntryModal = ({ entryType, onClose, onSuccess }) => {
   const { createCategory, createPaymentMode } = useContext(DataContext);
   const [newValue, setNewValue] = useState("");
   const [error, setError] = useState("");
@@ -19,10 +19,14 @@ const AddEntryModal = ({ entryType, onClose }) => {
 
     setLoading(true);
     try {
+      let created = null;
       if (entryType === "category") {
-        await createCategory({ category: newValue });
+        created = await createCategory({ category: newValue.trim() });
       } else if (entryType === "paymentMode") {
-        await createPaymentMode({ paymentMode: newValue });
+        created = await createPaymentMode({ paymentMode: newValue.trim() });
+      }
+      if (onSuccess) {
+        onSuccess(created || newValue.trim());
       }
       setNewValue("");
       onClose();
@@ -74,6 +78,7 @@ const AddEntryModal = ({ entryType, onClose }) => {
 AddEntryModal.propTypes = {
   entryType: PropTypes.string.isRequired,
   onClose: PropTypes.func.isRequired,
+  onSuccess: PropTypes.func,
 };
 
 export default AddEntryModal;

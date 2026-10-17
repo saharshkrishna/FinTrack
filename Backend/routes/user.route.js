@@ -1,48 +1,50 @@
 const express = require("express");
-const controller = require('../controllers/user.controller')
+const transactionController = require('../controllers/transaction.controller');
+const loanController = require('../controllers/loan.controller');
+const loanReController = require('../controllers/loanRe.controller');
+const partyController = require('../controllers/party.controller');
+const paymentController = require('../controllers/Payment.controller');
+const categoryController = require('../controllers/category.controller');
 const upload = require('../middleware/file');
-const {uploadFiles} = require('../controllers/filecontroller')
+const { uploadFiles } = require('../controllers/filecontroller');
+
 const router = express.Router();
 
-//Transaction Routes
-router.post('/transactions', controller.createTransaction);
-router.get('/transactions', controller.getAllTransactions);
-router.get('/transactions/:type', controller.getTransactionsByType);
-router.put('/transactions/:id', controller.updateTransaction);
-router.post('/transactions/delete', controller.deleteTransaction);
+// Transaction Routes
+router.post('/transactions', transactionController.createTransaction);
+router.get('/transactions', transactionController.getAllTransactions);
+router.get('/transactions/:type', transactionController.getTransactionsByType);
+router.put('/transactions/:id', transactionController.updateTransaction);
+router.post('/transactions/delete', transactionController.deleteTransaction);
 
-//Loan Routes
-router.post("/loans", controller.createLoan);
-router.get("/loans", controller.getAllLoans);
-router.get("/loans/:id", controller.getLoanById);
-router.put("/loans/:id", controller.updateLoan);
-router.delete("/loans", controller.deleteLoan);
+// Loan Routes
+router.post("/loans", loanController.createLoan);
+router.get("/loans", loanController.getAllLoans);
+router.get("/loans/:id", loanController.getLoanById);
+router.put("/loans/:id", loanController.updateLoan);
+router.delete("/loans/:id", loanController.deleteLoan);
 
 // Loan Re Routes
-router.post("/loanRe", controller.createLoanRe);
-router.get("/loanRe", controller.getLoanReEntries);
+router.post("/loanRe", loanReController.createLoanRe);
+router.get("/loanRe", loanReController.getLoanReEntries);
 
-// Add party
-router.post("/parties",controller.AddParty);
-router.put('/parties/:id', controller.updateParty);
-router.delete('/parties/:id', controller.deleteParty);
-router.get('/parties', controller.getParty);
+// Party Routes
+router.post("/parties", partyController.AddParty);
+router.put('/parties/:id', partyController.updateParty);
+router.delete('/parties/:id', partyController.deleteParty);
+router.get('/parties', partyController.getParty);
 
-// Add Payment Mode
-router.post("/paymentMode", controller.AddPaymentMode);
-router.put('/paymentMode/:id', controller.updatePaymentMode);
-router.delete('/paymentMode/:id', controller.deletePaymentMode);
+// Payment Mode Routes
+router.post("/paymentMode", paymentController.AddPaymentMode);
+router.put('/paymentMode/:id', paymentController.updatePaymentMode);
+router.delete('/paymentMode/:id', paymentController.deletePaymentMode);
+router.get("/paymentMode", paymentController.getPaymentModes);
 
-// Add Category
-router.post("/category", controller.AddCategory);
-router.put('/category/:id', controller.updateCategory);
-router.delete('/category/:id', controller.deleteCategory);
-
-// Route to get all categories
-router.get("/category", controller.getCategory);
-
-// Route to get all payment modes
-router.get("/paymentMode", controller.getPaymentModes);
+// Category Routes
+router.post("/category", categoryController.AddCategory);
+router.put('/category/:id', categoryController.updateCategory);
+router.delete('/category/:id', categoryController.deleteCategory);
+router.get("/category", categoryController.getCategory);
 
 router.post('/uploads', upload.array('file', 5), uploadFiles);
 

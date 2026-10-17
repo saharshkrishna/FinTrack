@@ -59,7 +59,7 @@ exports.createLoanRe = async (req, res) => {
 exports.getLoanReEntries = async (req, res) => {
   try {
     const entries = await LoanRe.find({ businessId: req.businessId }).sort({ createdAt: -1 });
-    res.status(200).json({ loanReEntries: entries });
+    res.status(200).json({ loanReEntries: entries, entries });
   } catch (err) {
     console.error("LoanRe GET error:", err);
     res.status(500).json({ message: "Error fetching reimbursements", error: err.message });

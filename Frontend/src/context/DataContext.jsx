@@ -1,14 +1,46 @@
 // DataContext.jsx
-import { createContext, useState, useEffect } from "react";
+import { createContext, useState, useEffect, useContext } from "react";
 import PropTypes from 'prop-types';
 import axios from "axios";
 import { toast } from 'react-toastify';
+import { AuthContext } from "./AuthContext";
 
 export const DataContext = createContext();
 
 const API_BASE_URL = "http://localhost:5000/api/user";
 
+// Ensure all requests include auth token and businessId headers
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  const businessId = localStorage.getItem('businessId');
+  if (token) {
+    if (typeof config.headers.set === 'function') {
+      config.headers.set('Authorization', `Bearer ${token}`);
+    } else {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+  if (businessId) {
+    if (typeof config.headers.set === 'function') {
+      config.headers.set('x-business-id', businessId);
+    } else {
+      config.headers['x-business-id'] = businessId;
+    }
+  }
+  return config;
+});
+
+// Capture any returned x-business-id from response
+axios.interceptors.response.use((response) => {
+  const returnedBizId = response.headers?.['x-business-id'];
+  if (returnedBizId && !localStorage.getItem('businessId')) {
+    localStorage.setItem('businessId', returnedBizId);
+  }
+  return response;
+});
+
 export const DataProvider = ({ children }) => {
+  const { user } = useContext(AuthContext);
   const [parties, setParties] = useState([]);
   const [categories, setCategories] = useState([]);
   const [paymentModes, setPaymentModes] = useState([]);
@@ -17,32 +49,34 @@ export const DataProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const fetchAllData = async () => {
+    try {
+      setLoading(true);
+      const [partiesResponse, categoriesResponse, paymentModesResponse, loansResponse, transactionsResponse] = await Promise.all([
+        axios.get(`${API_BASE_URL}/parties`),
+        axios.get(`${API_BASE_URL}/category`),
+        axios.get(`${API_BASE_URL}/paymentMode`),
+        axios.get(`${API_BASE_URL}/loans`),
+        axios.get(`${API_BASE_URL}/transactions`)
+      ]);
+      
+      setParties(partiesResponse.data.parties || []);
+      setCategories(categoriesResponse.data.category || []);
+      setPaymentModes(paymentModesResponse.data.paymentMode || []);
+      setLoans(loansResponse.data.loans || []);
+      setTransactions(transactionsResponse.data.transactions || []);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching shared data:", err);
+      setError("Error fetching data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [partiesResponse, categoriesResponse, paymentModesResponse, loansResponse, transactionsResponse] = await Promise.all([
-          axios.get(`${API_BASE_URL}/parties`),
-          axios.get(`${API_BASE_URL}/category`),
-          axios.get(`${API_BASE_URL}/paymentmode`),
-          axios.get(`${API_BASE_URL}/loans`),
-          axios.get(`${API_BASE_URL}/transactions`)
-        ]);
-        
-        setParties(partiesResponse.data.parties || []);
-        setCategories(categoriesResponse.data.category || []);
-        setPaymentModes(paymentModesResponse.data.paymentMode || []);
-        setLoans(loansResponse.data.loans || []);
-        setTransactions(transactionsResponse.data.transactions || []);
-      } catch (err) {
-        console.error("Error fetching shared data:", err);
-        setError("Error fetching data");
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, []);
+    fetchAllData();
+  }, [user]);
 
   // ==================== Party APIs ====================
   const fetchParties = async () => {
@@ -259,7 +293,7 @@ export const DataProvider = ({ children }) => {
   // ==================== Payment Mode APIs ====================
   const fetchPaymentModes = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/paymentmode`);
+      const response = await axios.get(`${API_BASE_URL}/paymentMode`);
       setPaymentModes(response.data.paymentMode || []);
     } catch (err) {
       console.error("Error fetching payment modes:", err);
@@ -319,6 +353,7 @@ export const DataProvider = ({ children }) => {
         transactions,
         loading,
         error,
+        refreshData: fetchAllData,
         // Party operations
         fetchParties,
         createParty,
