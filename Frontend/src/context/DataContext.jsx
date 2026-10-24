@@ -40,7 +40,7 @@ axios.interceptors.response.use((response) => {
 });
 
 export const DataProvider = ({ children }) => {
-  const { user } = useContext(AuthContext);
+  const { user, activeBusiness } = useContext(AuthContext);
   const [parties, setParties] = useState([]);
   const [categories, setCategories] = useState([]);
   const [paymentModes, setPaymentModes] = useState([]);
@@ -76,7 +76,7 @@ export const DataProvider = ({ children }) => {
 
   useEffect(() => {
     fetchAllData();
-  }, [user]);
+  }, [user, activeBusiness?._id]);
 
   // ==================== Party APIs ====================
   const fetchParties = async () => {
@@ -151,6 +151,20 @@ export const DataProvider = ({ children }) => {
     } catch (error) {
       console.error("Error creating transaction:", error);
       toast.error("Failed to create transaction");
+      throw error;
+    }
+  };
+
+  const createBulkTransactions = async (transactionsList) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/transactions/bulk`, { transactions: transactionsList });
+      const newTransactions = response.data.transactions || [];
+      setTransactions((prev) => [...newTransactions, ...prev]);
+      toast.success(response.data.message || `Imported ${newTransactions.length} entries successfully`);
+      return newTransactions;
+    } catch (error) {
+      console.error("Error creating bulk transactions:", error);
+      toast.error(error.response?.data?.error || "Failed to import transactions");
       throw error;
     }
   };
@@ -362,6 +376,7 @@ export const DataProvider = ({ children }) => {
         // Transaction operations
         fetchTransactions,
         createTransaction,
+        createBulkTransactions,
         updateTransaction,
         deleteTransactions,
         // Loan operations

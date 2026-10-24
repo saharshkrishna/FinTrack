@@ -5,6 +5,8 @@ import Filters from "../components/Filters";
 import SearchAndActions from "../components/SearchAndActnbtn";
 import Summary from "../components/Summary";
 import Table from "../components/Table";
+import BulkEntryModal from "../components/modal/BulkEntryModal";
+import ReportModal from "../components/modal/ReportModal";
 
 const ExpenseBook = () => {
   // Get transaction operations from context
@@ -16,6 +18,8 @@ const ExpenseBook = () => {
   } = useContext(DataContext);
 
   const [filteredData, setFilteredData] = useState([]);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [filterOptions] = useState({
     parties: [],
     paymentMode: [],
@@ -104,7 +108,7 @@ const ExpenseBook = () => {
 
   return (
     <div>
-      <Header />
+      <Header onOpenBulkImport={() => setIsBulkModalOpen(true)} onOpenReport={() => setIsReportModalOpen(true)} />
       {/* Pass filters and handleFilterChange to Filters component */}
       <Filters
         filterOptions={filterOptions}
@@ -117,6 +121,18 @@ const ExpenseBook = () => {
         tableData={filteredData} // filters={filteredData}
         updateEntry={updateEntry}
         onDeleteSelected={handleDeleteSelected} // Pass the delete handler
+      />
+      
+      {/* Bulk Entry Excel Import Modal */}
+      <BulkEntryModal
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+      />
+
+      {/* Report Generation Modal */}
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
       />
     </div>
   );

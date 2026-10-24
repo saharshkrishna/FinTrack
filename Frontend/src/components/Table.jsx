@@ -97,111 +97,136 @@ const Table = ({ tableData, updateEntry, onDeleteSelected, }) => {
   
 
   return (
-    <div className="bg-white rounded-lg shadow-sm">
-
+    <div className="bg-white rounded-lg shadow-sm border border-gray-100 flex flex-col overflow-hidden">
       {/* Delete Button (Visible when rows are selected) */}
       {selectedRows.length > 0 && (
-  <div className="py-2 px-3 w-[120px] bg-red-50 border-b border-red-200">
-    <button
-      onClick={handleLocalDeleteSelected}
-      className="px-4 py-2 bg-red-500 text-white rounded-lg"
-    >
-      Delete Selected ({selectedRows.length})
-    </button>
-  </div>
-)}
+        <div className="py-2.5 px-4 bg-red-50 border-b border-red-200 flex items-center justify-between shrink-0">
+          <span className="text-xs font-medium text-red-700">
+            {selectedRows.length} {selectedRows.length === 1 ? 'row' : 'rows'} selected
+          </span>
+          <button
+            onClick={handleLocalDeleteSelected}
+            className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs"
+          >
+            Delete Selected ({selectedRows.length})
+          </button>
+        </div>
+      )}
 
-      {/* Pagination */}
-      <Pagination
-        totalRows={sortedTableData.length}
-        rowsPerPage={rowsPerPage}
-        currentPage={currentPage}
-        setCurrentPage={setCurrentPage}
-      />
-
-      {/* Table */}
-      <table className="table-fixed w-full text-left">
-        <thead>
-          <tr className="text-left bg-gray-50">
-          <th className="py-2 px-3 w-4">
-        {/* Select All Checkbox */}
-        <input
-  type="checkbox"
-  checked={currentRows.length > 0 && currentRows.every((row) => selectedRows.includes(row._id))}
-  onChange={handleSelectAll}
-/>
-      </th>
-            <th className="py-2 px-3 w-[120px] text-[13px] font-semibold">Date</th>
-            <th className="py-2 px-3 w-[120px] text-[13px] font-semibold">Type</th>
-            <th className="py-2 px-3 w-[120px] text-[13px] font-semibold">Category</th>
-            <th className="py-2 px-3 w-[120px] text-[13px] font-semibold">Bill</th>
-            <th className="py-2 px-3 w-[120px] text-[13px] font-semibold">Amount</th>
-            <th className="py-2 px-3 w-[120px] text-[13px] font-semibold">Details</th>
-          </tr>
-        </thead>
-        <tbody>
-        {currentRows.map((entry) => (
-         
-      <tr
-        key={entry._id}
-        className="border-t hover:bg-gray-50 cursor-pointer"
-        onClick={() => handleRowClick(entry)} // Handle row click
-      >
-        <td className="py-2 px-3 w-[120px]" onClick={(e) => e.stopPropagation()}>
-          {/* Row Checkbox */}
-          <input
-            type="checkbox"
-            checked={selectedRows.includes(entry._id || entry.id)}
-            onChange={() => handleRowSelect(entry._id || entry.id)}
-          />
-        </td>
-              <td className="py-2 px-3 w-[120px] text-[13px]">
-                <div>{entry.date}</div>
-                {/* <div className="text-sm text-gray-500">{entry.time}</div> */}
-              </td>
-              <td className="py-2 px-3 w-[120px] text-[13px]">{entry.type}</td>
-              <td className="py-2 px-3 w-[120px] text-[13px]">{entry.category}</td>
-              
-              
-              <td className="py-2 px-3 w-[120px] text-[13px]">
-                {(() => {
-                  const filesArray = entry.files || entry.bills || [];
-                  if (filesArray.length > 0) {
-                    const firstFile = filesArray[0];
-                    const fileName = typeof firstFile === 'string' ? firstFile : (firstFile.name || firstFile.filename || '');
-                    const icon = getFileIcon(fileName);
-                    return (
-                      <div className="flex items-center gap-1">
-                        <span className="text-lg" title={fileName}>{icon}</span>
-                        {filesArray.length > 1 && (
-                          <span className="text-sm font-medium text-gray-600">+{filesArray.length - 1}</span>
-                        )}
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
-              </td>
-              
-              <td
-      className={`py-2 px-3 w-[120px] text-[13px] ${
-              entry.type === "Cash Out"
-              ? "text-red-600"
-              : entry.type === "Credit"
-              ? "text-blue-600"
-              : "text-green-600"
-          }`}
-        >
-                {entry.amount}
-              </td>
-              <td className="py-2 px-3 w-[120px] text-[13px]">
-                <div>{entry.partyName}</div> {/* Display party name and type */}
-                <div className="text-sm text-gray-500">{entry.details}</div>
-              </td>
+      {/* Table Scrollable Container - Only the table scrolls */}
+      <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-380px)] min-h-[300px]">
+        <table className="table-fixed w-full text-left">
+          <thead className="sticky top-0 z-10 bg-gray-50 shadow-xs border-b border-gray-200 select-none">
+            <tr className="text-left bg-gray-50">
+              <th className="py-2.5 px-3 w-4 bg-gray-50">
+                {/* Select All Checkbox */}
+                <input
+                  type="checkbox"
+                  checked={currentRows.length > 0 && currentRows.every((row) => selectedRows.includes(row._id))}
+                  onChange={handleSelectAll}
+                  className="rounded cursor-pointer"
+                />
+              </th>
+              <th className="py-2.5 px-3 w-[120px] text-[13px] font-semibold bg-gray-50 text-gray-700">Date</th>
+              <th className="py-2.5 px-3 w-[120px] text-[13px] font-semibold bg-gray-50 text-gray-700">Type</th>
+              <th className="py-2.5 px-3 w-[120px] text-[13px] font-semibold bg-gray-50 text-gray-700">Category</th>
+              <th className="py-2.5 px-3 w-[120px] text-[13px] font-semibold bg-gray-50 text-gray-700">Bill</th>
+              <th className="py-2.5 px-3 w-[120px] text-[13px] font-semibold bg-gray-50 text-gray-700">Amount</th>
+              <th className="py-2.5 px-3 w-[120px] text-[13px] font-semibold bg-gray-50 text-gray-700">Details</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {currentRows.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="py-12 text-center text-gray-400 text-sm">
+                  No transactions found.
+                </td>
+              </tr>
+            ) : (
+              currentRows.map((entry) => (
+                <tr
+                  key={entry._id}
+                  className="border-t hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => handleRowClick(entry)}
+                >
+                  <td className="py-2 px-3 w-[120px]" onClick={(e) => e.stopPropagation()}>
+                    {/* Row Checkbox */}
+                    <input
+                      type="checkbox"
+                      checked={selectedRows.includes(entry._id || entry.id)}
+                      onChange={() => handleRowSelect(entry._id || entry.id)}
+                      className="rounded cursor-pointer"
+                    />
+                  </td>
+                  <td className="py-2 px-3 w-[120px] text-[13px]">
+                    <div>{entry.date}</div>
+                  </td>
+                  <td className="py-2 px-3 w-[120px] text-[13px] font-medium">
+                    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                      entry.type === "Cash In" 
+                        ? "bg-green-50 text-green-700" 
+                        : entry.type === "Cash Out"
+                        ? "bg-red-50 text-red-700"
+                        : entry.type === "Credit"
+                        ? "bg-blue-50 text-blue-700"
+                        : "bg-amber-50 text-amber-700"
+                    }`}>
+                      {entry.type}
+                    </span>
+                  </td>
+                  <td className="py-2 px-3 w-[120px] text-[13px] text-gray-700">{entry.category || "-"}</td>
+                  
+                  <td className="py-2 px-3 w-[120px] text-[13px]">
+                    {(() => {
+                      const filesArray = entry.files || entry.bills || [];
+                      if (filesArray.length > 0) {
+                        const firstFile = filesArray[0];
+                        const fileName = typeof firstFile === 'string' ? firstFile : (firstFile.name || firstFile.filename || '');
+                        const icon = getFileIcon(fileName);
+                        return (
+                          <div className="flex items-center gap-1">
+                            <span className="text-lg" title={fileName}>{icon}</span>
+                            {filesArray.length > 1 && (
+                              <span className="text-sm font-medium text-gray-600">+{filesArray.length - 1}</span>
+                            )}
+                          </div>
+                        );
+                      }
+                      return <span className="text-gray-400">-</span>;
+                    })()}
+                  </td>
+                  
+                  <td
+                    className={`py-2 px-3 w-[120px] text-[13px] font-semibold ${
+                      entry.type === "Cash Out" || entry.type === "Debit"
+                        ? "text-red-600"
+                        : entry.type === "Credit"
+                        ? "text-blue-600"
+                        : "text-green-600"
+                    }`}
+                  >
+                    {typeof entry.amount === 'number' ? entry.amount.toLocaleString() : entry.amount}
+                  </td>
+                  <td className="py-2 px-3 w-[120px] text-[13px]">
+                    <div className="font-medium text-gray-800">{entry.partyName || "-"}</div>
+                    <div className="text-xs text-gray-500 truncate max-w-[140px]">{entry.remarks || entry.details || ""}</div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination (Pinned at bottom of table card) */}
+      <div className="shrink-0">
+        <Pagination
+          totalRows={sortedTableData.length}
+          rowsPerPage={rowsPerPage}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+        />
+      </div>
 
       {/* Entry Details Modal */}
       {selectedEntry && selectedEntry.type !== "Loan" && (

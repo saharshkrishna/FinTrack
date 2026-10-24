@@ -42,6 +42,51 @@ exports.createTransaction = async (req, res) => {
   }
 };
 
+exports.createBulkTransactions = async (req, res) => {
+  try {
+    const { transactions } = req.body;
+    if (!Array.isArray(transactions) || transactions.length === 0) {
+      return res.status(400).json({ error: "Transactions array is required and cannot be empty" });
+    }
+
+    const validDocs = [];
+    const errors = [];
+
+    for (let i = 0; i < transactions.length; i++) {
+      const item = transactions[i];
+      if (!item.type || !item.date || item.amount === undefined || item.amount === null || isNaN(Number(item.amount))) {
+        errors.push({ index: i, error: "Missing or invalid required fields (type, date, amount)" });
+        continue;
+      }
+      validDocs.push({
+        businessId: req.businessId,
+        type: item.type,
+        date: String(item.date),
+        amount: Number(item.amount),
+        partyName: item.partyName ? String(item.partyName) : "",
+        remarks: item.remarks ? String(item.remarks) : "",
+        category: item.category ? String(item.category) : "",
+        paymentMode: item.paymentMode ? String(item.paymentMode) : "Cash",
+        files: Array.isArray(item.files) ? item.files : [],
+      });
+    }
+
+    if (validDocs.length === 0) {
+      return res.status(400).json({ error: "No valid transactions found to insert", details: errors });
+    }
+
+    const savedTransactions = await Transaction.insertMany(validDocs);
+    res.status(201).json({
+      message: `${savedTransactions.length} transactions imported successfully`,
+      transactions: savedTransactions,
+      errors: errors.length > 0 ? errors : undefined,
+    });
+  } catch (err) {
+    console.error("Error creating bulk transactions:", err);
+    res.status(500).json({ error: "Failed to import bulk transactions", details: err.message });
+  }
+};
+
 exports.getAllTransactions = async (req, res) => {
   try {
     const transactions = await Transaction.find({ businessId: req.businessId }).sort({ createdAt: -1 });

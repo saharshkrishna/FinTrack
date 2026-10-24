@@ -5,6 +5,9 @@ const transactionController = require('../controllers/transaction.controller');
 // POST / - Create new transaction
 router.post('/', transactionController.createTransaction);
 
+// POST /bulk - Bulk create transactions
+router.post('/bulk', transactionController.createBulkTransactions);
+
 // POST /delete - Delete transaction (specific route before dynamic routes)
 router.post('/delete', transactionController.deleteTransaction);
 
