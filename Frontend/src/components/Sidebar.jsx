@@ -48,6 +48,7 @@ const Sidebar = () => {
 
   const isCurrentPage = (path) => {
     if (path === '/' && (location.pathname === '/' || location.pathname === '/expense-book')) return true;
+    if (path === '/financial-overview' && (location.pathname === '/financial-overview' || location.pathname === '/overview')) return true;
     return location.pathname === path;
   };
 
@@ -228,12 +229,12 @@ const Sidebar = () => {
 
             {/* Overview / Analytics Button */}
             <button
-              onClick={() => {
-                navigate('/');
-                // Smooth scroll to summary section if on page
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-all cursor-pointer"
+              onClick={() => navigate('/financial-overview')}
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                isCurrentPage('/financial-overview')
+                  ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
             >
               <FiPieChart className="text-base shrink-0" />
               <span>Financial Overview</span>

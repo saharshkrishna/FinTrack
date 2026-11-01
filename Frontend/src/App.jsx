@@ -12,6 +12,7 @@ import ExpenseBook from "./pages/ExpenseBook";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Landing from "./pages/Landing";
+import FinancialOverview from "./pages/FinancialOverview";
 import Layout from "./Layout";
 import CashinModal from "./components/modal/CashinModal";
 import CashoutModal from "./components/modal/CashoutModal";
@@ -74,6 +75,8 @@ function App() {
                           />
                         }
                       />
+                      <Route path="/financial-overview" element={<FinancialOverview />} />
+                      <Route path="/overview" element={<FinancialOverview />} />
                       <Route path="/filters" element={<Filters />} />
                       <Route
                         path="/search-and-actions"
