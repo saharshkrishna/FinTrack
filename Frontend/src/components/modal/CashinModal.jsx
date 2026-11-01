@@ -77,7 +77,7 @@ const CashinModal = ({ onClose, type, onSubmit, initialData }) => {
           amount: result,
         }));
       }
-    } catch (error) {
+    } catch {
       setCalculatedValue(""); // Do not set "Invalid Expression" yet
       setFormData((prev) => ({
         ...prev,

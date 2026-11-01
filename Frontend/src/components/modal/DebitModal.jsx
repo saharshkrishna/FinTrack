@@ -50,7 +50,7 @@ const DebitModal = ({ onClose, type, onSubmit }) => {
         ...prev,
         amount: result,
       }));
-    } catch (error) {
+    } catch {
       setCalculatedValue(value);
       setFormData((prev) => ({
         ...prev,
@@ -84,7 +84,6 @@ const handleFileChange = (e) => {
   };
 
   const handleAddPartyName = (partyData) => {
-    setParties((prev) => [...prev, partyData.partyName]);
     setFormData((prev) => ({
       ...prev,
       partyName: partyData.partyName,
@@ -92,11 +91,15 @@ const handleFileChange = (e) => {
   };
 
   const handleAddCategory = (newCategory) => {
-    setCategories((prev) => [...prev, newCategory]);
     setFormData((prev) => ({
       ...prev,
       category: newCategory,
     }));
+  };
+
+  const handleOpenModal = (type) => {
+    setAddingModalType(type);
+    setIsAddingModalOpen(true);
   };
 
 

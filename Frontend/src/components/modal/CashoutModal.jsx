@@ -1,4 +1,4 @@
-import { useState,useContext, useEffect} from "react";
+import { useState, useContext } from "react";
 import PropTypes from "prop-types";
 import { DataContext } from "../../context/DataContext";
 import { FiX, FiPlus } from "react-icons/fi";
@@ -75,7 +75,7 @@ const CashoutModal = ({ onClose, type, onSubmit, initialData }) => {
           amount: result,
         }));
       }
-    } catch (error) {
+    } catch {
       setCalculatedValue(""); // Do not set "Invalid Expression" yet
       setFormData((prev) => ({
         ...prev,

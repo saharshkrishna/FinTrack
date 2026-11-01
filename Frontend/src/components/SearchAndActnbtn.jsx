@@ -31,6 +31,10 @@ const Search = ({ onSearch }) => {
   );
 };
 
+Search.propTypes = {
+  onSearch: PropTypes.func.isRequired,
+};
+
 const Actnbtn = ({ addEntry }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState(null); // Track which modal is open

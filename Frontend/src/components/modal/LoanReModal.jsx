@@ -21,7 +21,6 @@ const LoanReModal = ({ isOpen, onClose, onSubmit, loans = [] }) => {
 
   const [error, setError] = useState('');
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
-  const [parties, setParties] = useState([]);
   const [isLoanDropdownOpen, setIsLoanDropdownOpen] = useState(false);
 
   // When a loan is selected from dropdown
@@ -69,7 +68,6 @@ const LoanReModal = ({ isOpen, onClose, onSubmit, loans = [] }) => {
   };
 
   const handleAddPartyName = (partyData) => {
-    setParties((prev) => [...prev, partyData.partyName]);
     setFormData((prev) => ({
       ...prev,
       partyName: partyData.partyName,

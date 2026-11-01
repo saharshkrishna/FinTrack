@@ -1,6 +1,6 @@
 import { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
-import { FiX, FiBriefcase, FiPlus, FiCheck } from 'react-icons/fi';
+import { FiX, FiBriefcase, FiPlus } from 'react-icons/fi';
 import { AuthContext } from '../../context/AuthContext';
 
 const AddBusinessModal = ({ isOpen, onClose }) => {

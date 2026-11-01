@@ -76,7 +76,7 @@ const CreditModal = ({ onClose, type, onSubmit, initialData }) => {
           amount: result,
         }));
       }
-    } catch (error) {
+    } catch {
       setCalculatedValue(""); // Do not set "Invalid Expression" yet
       setFormData((prev) => ({
         ...prev,
@@ -150,10 +150,8 @@ const CreditModal = ({ onClose, type, onSubmit, initialData }) => {
   };
 
   const handleAddParty = (newParty) => {
-    setParties((prev) => [...prev, { partyName: newParty }]);
     setFormData((prev) => ({ ...prev, partyName: newParty }));
   };
-  
 
   const handleOpenModal = (type) => {
     setEntryType(type); // Set entry type dynamically
@@ -162,7 +160,7 @@ const CreditModal = ({ onClose, type, onSubmit, initialData }) => {
   
   const handleAddSuccess = (newEntry) => {
     if (entryType === "category") {
-      setCategories((prev) => [...prev, newEntry]); // Update category list
+      setFormData((prev) => ({ ...prev, category: newEntry }));
     }
   };
 

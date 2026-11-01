@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import './Auth.css';
@@ -147,7 +147,7 @@ const Login = () => {
 
           <div className="auth-footer">
             <p className="auth-footer-text">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link to="/signup" className="auth-footer-link">
                 Sign up for free
               </Link>

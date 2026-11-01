@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TrendingUp, Users, DollarSign, ShoppingCart, ArrowUp, ArrowDown } from 'lucide-react';
 import { DataContext } from '../context/DataContext';
@@ -73,7 +73,7 @@ export default function Landing() {
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
               Track expenses, manage budgets, and gain valuable insights into your financial data.
-              Make informed decisions with FinTrack's powerful analytics.
+              Make informed decisions with FinTrack&apos;s powerful analytics.
             </p>
             <button
               onClick={() => navigate('/signup')}

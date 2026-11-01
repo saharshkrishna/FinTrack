@@ -11,7 +11,6 @@ import {
   FiX, 
   FiPlus, 
   FiCheckCircle,
-  FiFilter,
   FiRefreshCw
 } from "react-icons/fi";
 import { DataContext } from "../../context/DataContext";

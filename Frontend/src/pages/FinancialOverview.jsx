@@ -14,7 +14,6 @@ import {
   FiAlertTriangle,
   FiCheckCircle,
   FiAward,
-  FiCalendar,
   FiRefreshCw,
   FiArrowLeft,
   FiDownload,
