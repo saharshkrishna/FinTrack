@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import { DataContext } from "../context/DataContext";
 import DateModal from "./modal/DateModal"; // Import the modal
 
-const Filters = ({ onFilterChange, }) => {
+const Filters = ({ onFilterChange }) => {
   const [selectedFilters, setSelectedFilters] = useState({
     duration: "All Time",
     type: "All",
@@ -14,62 +14,27 @@ const Filters = ({ onFilterChange, }) => {
     endDate: "",
   });
 
-  const [selectedDuration, setSelectedDuration] = useState("All Time");
-  const [selectedType, setSelectedType] = useState("All");
-  const [selectedParty, setSelectedParty] = useState("All");
-  const [selectedPaymentMode, setSelectedPaymentMode] = useState("All");
-  const [selectedCategory, setSelectedCategory] = useState("All");
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
   const { parties, categories, paymentModes, loading, error } = useContext(DataContext);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
-  // Handle filter changes
- const handleFilterChange = (filterType, value) => {
-  const updatedFilters = { ...selectedFilters, [filterType]: value };
+  // Handle generic filter changes (type, party, paymentMode, category)
+  const handleFilterChange = (filterType, value) => {
+    const updatedFilters = { ...selectedFilters, [filterType]: value };
 
-  setSelectedFilters(updatedFilters);
-  onFilterChange(updatedFilters);
-
-  switch (filterType) {
-    case "duration":
-      setSelectedDuration(value);
+    if (filterType === "duration") {
       if (value === "Custom Range") {
         setIsDateModalOpen(true);
       } else {
-        setStartDate("");
-        setEndDate("");
+        updatedFilters.startDate = "";
+        updatedFilters.endDate = "";
       }
-      break;
-    case "type":
-      setSelectedType(value);
-      break;
-    case "party":
-      setSelectedParty(value);
-      break;
-    case "paymentMode":
-      setSelectedPaymentMode(value);
-      break;
-    case "category":
-      setSelectedCategory(value);
-      break;
-    default:
-      break;
-  }
+    }
 
-
-    onFilterChange({
-      duration: filterType === "duration" ? value : selectedDuration,
-      type: filterType === "type" ? value : selectedType,
-      party: filterType === "party" ? value : selectedParty,
-      paymentMode: filterType === "paymentMode" ? value : selectedPaymentMode,
-      category: filterType === "category" ? value : selectedCategory,
-      startDate: filterType === "duration" && value === "Custom Range" ? startDate : "",
-      endDate: filterType === "duration" && value === "Custom Range" ? endDate : "",
-    });
+    setSelectedFilters(updatedFilters);
+    onFilterChange(updatedFilters);
   };
 
   const handleResetFilters = () => {
@@ -82,36 +47,27 @@ const Filters = ({ onFilterChange, }) => {
       startDate: "",
       endDate: "",
     };
-  
+
     setSelectedFilters(defaultFilters);
-    setSelectedDuration("All Time");
-    setSelectedType("All");
-    setSelectedParty("All");
-    setSelectedPaymentMode("All");
-    setSelectedCategory("All");
-    setStartDate("");
-    setEndDate("");
-  
     onFilterChange(defaultFilters);
   };
-  
 
   const handleDurationChange = (e) => {
     const value = e.target.value;
-    setSelectedFilters((prev) => ({ ...prev, duration: value })); // ✅ Ensure state is updated
-  
     if (value === "Custom Range") {
       setIsDateModalOpen(true);
     } else {
-      onFilterChange({
-        ...selectedFilters, // ✅ Keep previous filters
+      const updatedFilters = {
+        ...selectedFilters,
         duration: value,
         startDate: "",
         endDate: "",
-      });
+      };
+      setSelectedFilters(updatedFilters);
+      onFilterChange(updatedFilters);
     }
   };
-  
+
   const handleDateSelection = ({ startDate, endDate }) => {
     const updatedFilters = {
       ...selectedFilters,
@@ -119,33 +75,53 @@ const Filters = ({ onFilterChange, }) => {
       startDate,
       endDate,
     };
-  
-    setStartDate(startDate);
-    setEndDate(endDate);
+
     setSelectedFilters(updatedFilters);
     onFilterChange(updatedFilters);
     setIsDateModalOpen(false);
   };
-  
 
   const handleDateModalClose = () => {
     setIsDateModalOpen(false);
   };
-
-  
 
   return (
     <div className="text-[14px]">
       {/* Filters */}
       <div className="grid grid-cols-6 gap-2 mb-4">
         {/* Duration Filter */}
-          <select className="p-1 border rounded-lg" value={selectedFilters.duration} onChange={handleDurationChange}>
+        <div className="flex items-center gap-1">
+          <select
+            className="w-full p-1 border rounded-lg"
+            value={selectedFilters.duration}
+            onChange={handleDurationChange}
+          >
             <option value="All Time">All Time</option>
+            <option value="Today">Today</option>
+            <option value="Yesterday">Yesterday</option>
             <option value="Last 7 Days">Last 7 Days</option>
             <option value="Last 30 Days">Last 30 Days</option>
             <option value="Last 90 Days">Last 90 Days</option>
-            <option value="Custom Range">Custom Range</option>
+            <option value="This Month">This Month</option>
+            <option value="Custom Range">
+              {selectedFilters.duration === "Custom Range" && selectedFilters.startDate
+                ? `Custom (${selectedFilters.startDate}${selectedFilters.endDate && selectedFilters.endDate !== selectedFilters.startDate ? ` to ${selectedFilters.endDate}` : ""})`
+                : "Custom Range..."}
+            </option>
           </select>
+          <button
+            type="button"
+            onClick={() => setIsDateModalOpen(true)}
+            className={`px-2 py-1 text-xs rounded-lg border font-medium shrink-0 flex items-center gap-1 cursor-pointer transition-colors ${
+              selectedFilters.duration === "Custom Range"
+                ? "bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100"
+                : "bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200"
+            }`}
+            title="Open custom date range picker"
+          >
+            📅 {selectedFilters.duration === "Custom Range" ? "Edit" : "Date"}
+          </button>
+        </div>
 
         {/* Type Filter */}
         <select
@@ -157,6 +133,7 @@ const Filters = ({ onFilterChange, }) => {
           <option value="Cash In">Cash In</option>
           <option value="Cash Out">Cash Out</option>
           <option value="Credit">Credit</option>
+          <option value="Debit">Debit</option>
           <option value="Loan">Loan</option>
           <option value="LoanRe">Loan Re</option>
         </select>
@@ -169,10 +146,10 @@ const Filters = ({ onFilterChange, }) => {
         >
           <option value="All">All parties</option>
           {parties?.map((party, index) => (
-          <option key={index} value={party.partyName}>
-            {party.partyName}
-                    </option>
-                  ))}
+            <option key={index} value={party.partyName}>
+              {party.partyName}
+            </option>
+          ))}
         </select>
 
         {/* Payment Mode Filter */}
@@ -183,10 +160,10 @@ const Filters = ({ onFilterChange, }) => {
         >
           <option value="All">All Payment Modes</option>
           {paymentModes?.map((paymentMode, index) => (
-          <option key={index} value={paymentMode.paymentMode}>
-            {paymentMode.paymentMode}
-          </option>
-        ))}
+            <option key={index} value={paymentMode.paymentMode}>
+              {paymentMode.paymentMode}
+            </option>
+          ))}
         </select>
 
         {/* Category Filter */}
@@ -197,10 +174,10 @@ const Filters = ({ onFilterChange, }) => {
         >
           <option value="All">All Category</option>
           {categories?.map((categoryObj) => (
-          <option key={categoryObj._id} value={categoryObj.category}>
-            {categoryObj.category}
-                    </option>
-                  ))}
+            <option key={categoryObj._id} value={categoryObj.category}>
+              {categoryObj.category}
+            </option>
+          ))}
         </select>
 
         {/* Reset Button */}
@@ -225,11 +202,8 @@ const Filters = ({ onFilterChange, }) => {
 };
 
 Filters.propTypes = {
-  filterOptions: PropTypes.object.isRequired,
+  filterOptions: PropTypes.object,
   onFilterChange: PropTypes.func.isRequired,
-  fetchPartyData: PropTypes.func.isRequired,
-  fetchPaymentData: PropTypes.func.isRequired,
-  fetchCategoryData: PropTypes.func.isRequired
 };
 
 export default Filters;

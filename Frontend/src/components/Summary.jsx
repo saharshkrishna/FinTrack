@@ -5,24 +5,22 @@ const Summary = ({ tableData, filters, }) => {
   console.log("Filters in Summary:", filters); // Debugging
 
   // Calculate totals
-  const totalLoanRe = filters
+  const dataSource = Array.isArray(filters) ? filters : (tableData || []);
+
+  const totalLoanRe = dataSource
     .filter((entry) => entry.type === "LoanRe")
     .reduce((sum, entry) => sum + parseFloat(entry.amount || 0), 0);
 
-  const debitEntries = tableData
-  .filter((entry) => entry.type === "Debit");
-  console.log("Debit Entries:", debitEntries); // Debugging
+  const debitEntries = dataSource
+    .filter((entry) => entry.type === "Debit");
   const totalDebit = debitEntries
-  .reduce((sum, entry) => sum + parseFloat(entry.amount || 0), 0);
-  console.log("Total Debit:", totalDebit); // Debugging
+    .reduce((sum, entry) => sum + parseFloat(entry.amount || 0), 0);
 
-  const creditEntries = tableData.filter((entry) => entry.type === "Credit");
-  console.log("Credit Entries:", creditEntries); // Debugging
+  const creditEntries = dataSource.filter((entry) => entry.type === "Credit");
   const totalCredit = creditEntries.reduce(
     (sum, entry) => sum + parseFloat(entry.amount || 0),
     0
   );
-  console.log("Total Credit:", totalCredit);
 
   const totalLoan = filters
     .filter((entry) => entry.type === "Loan")

@@ -8,6 +8,127 @@ import Table from "../components/Table";
 import BulkEntryModal from "../components/modal/BulkEntryModal";
 import ReportModal from "../components/modal/ReportModal";
 
+// Helper to extract clean YYYY-MM-DD from various date representations
+const normalizeDate = (val) => {
+  if (!val && val !== 0) return "";
+  if (val instanceof Date) {
+    if (!isNaN(val.getTime())) {
+      const y = val.getFullYear();
+      const m = String(val.getMonth() + 1).padStart(2, "0");
+      const d = String(val.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+  }
+  const str = String(val).trim();
+  if (!str) return "";
+  if (str.includes("T")) return str.split("T")[0];
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+
+  // Handle DD/MM/YYYY, DD-MM-YYYY, YYYY/MM/DD
+  const parts = str.split(/[/.-]/);
+  if (parts.length === 3) {
+    if (parts[0].length === 4) {
+      return `${parts[0]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`;
+    } else if (parts[2].length === 4) {
+      return `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+    }
+  }
+
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+  return str;
+};
+
+// Check if an entry date matches the active duration / date filter
+const matchesDateDuration = (entryDateStr, filters) => {
+  if (!filters || !filters.duration || filters.duration === "All Time") {
+    return true;
+  }
+  if (!entryDateStr) return false;
+
+  const now = new Date();
+  const formatYMD = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  const todayStr = formatYMD(now);
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const maxAllowedStr = formatYMD(tomorrow);
+
+  switch (filters.duration) {
+    case "Today":
+      return entryDateStr === todayStr;
+
+    case "Yesterday": {
+      const yesterday = new Date(now);
+      yesterday.setDate(now.getDate() - 1);
+      return entryDateStr === formatYMD(yesterday);
+    }
+
+    case "Last 7 Days": {
+      const past7 = new Date(now);
+      past7.setDate(now.getDate() - 7);
+      const past7Str = formatYMD(past7);
+      return entryDateStr >= past7Str && entryDateStr <= maxAllowedStr;
+    }
+
+    case "Last 30 Days": {
+      const past30 = new Date(now);
+      past30.setDate(now.getDate() - 30);
+      const past30Str = formatYMD(past30);
+      return entryDateStr >= past30Str && entryDateStr <= maxAllowedStr;
+    }
+
+    case "Last 90 Days": {
+      const past90 = new Date(now);
+      past90.setDate(now.getDate() - 90);
+      const past90Str = formatYMD(past90);
+      return entryDateStr >= past90Str && entryDateStr <= maxAllowedStr;
+    }
+
+    case "This Month": {
+      const startOfMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+      return entryDateStr >= startOfMonthStr && entryDateStr <= maxAllowedStr;
+    }
+
+    case "Custom Range": {
+      let start = normalizeDate(filters.startDate);
+      let end = normalizeDate(filters.endDate);
+
+      if (!start && !end) return true;
+
+      if (start && end && start > end) {
+        const temp = start;
+        start = end;
+        end = temp;
+      }
+
+      if (start && end) {
+        return entryDateStr >= start && entryDateStr <= end;
+      }
+      if (start) {
+        return entryDateStr >= start;
+      }
+      if (end) {
+        return entryDateStr <= end;
+      }
+      return true;
+    }
+
+    default:
+      return true;
+  }
+};
+
 const ExpenseBook = () => {
   // Get transaction operations from context
   const { 
@@ -17,7 +138,16 @@ const ExpenseBook = () => {
     deleteTransactions 
   } = useContext(DataContext);
 
-  const [filteredData, setFilteredData] = useState([]);
+  const [currentFilters, setCurrentFilters] = useState({
+    duration: "All Time",
+    type: "All",
+    party: "All",
+    paymentMode: "All",
+    category: "All",
+    startDate: "",
+    endDate: "",
+  });
+  const [searchTerm, setSearchTerm] = useState("");
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [filterOptions] = useState({
@@ -25,11 +155,6 @@ const ExpenseBook = () => {
     paymentMode: [],
     category: [],
   });
-
-  useEffect(() => {
-    // Update filtered data when transactions change
-    setFilteredData(transactions);
-  }, [transactions]);
 
   // Function to add a new entry to the table
   const addEntry = async (entry) => {
@@ -42,43 +167,74 @@ const ExpenseBook = () => {
     }
   };
 
-  const handleSearch = (searchTerm) => {
-    console.log("Search Term:", searchTerm);
-    if (!searchTerm.trim()) {
-      setFilteredData(transactions); // Reset to original data if search term is empty
-      return;
-    }
-
-    const searchLower = searchTerm.toLowerCase();
-    const filtered = transactions.filter((entry) => {
-      // Check if remarks is defined before calling toLowerCase
-      const remarks = entry.remarks || ""; // Default to empty string if remarks is undefined
-      const amount = entry.amount || ""; // Default to empty string if amount is undefined
-      console.log("Entry Remarks:", remarks);
-      return (
-        remarks.toLowerCase().includes(searchLower) ||
-        amount.toString().includes(searchTerm)
-      );
-    });
-    console.log("Filtered Data:", filtered); // Debugging
-    setFilteredData(filtered);
+  const handleSearch = (term) => {
+    setSearchTerm(term);
   };
 
   // Handle filter changes
   const handleFilterChange = (filters) => {
-    const filtered = transactions.filter((entry) => {
-      return (
-        (filters.duration === "All Time" ||
-          entry.duration === filters.duration) &&
-        (filters.type === "All" || entry.type === filters.type) &&
-        (filters.party === "All" || entry.partyName === filters.party) &&
-        (filters.paymentMode === "All" ||
-          entry.paymentMode === filters.paymentMode) &&
-        (filters.category === "All" || entry.category === filters.category)
-      );
-    });
-    setFilteredData(filtered);
+    setCurrentFilters(filters);
   };
+
+  // Synchronously compute filtered data using both filters and search term
+  const filteredData = (transactions || []).filter((entry) => {
+    // 1. Search filter
+    if (searchTerm.trim()) {
+      const s = searchTerm.toLowerCase().trim();
+      const remarks = (entry.remarks || "").toLowerCase();
+      const party = (entry.partyName || "").toLowerCase();
+      const category = (entry.category || "").toLowerCase();
+      const paymentMode = (entry.paymentMode || "").toLowerCase();
+      const amount = (entry.amount || "").toString();
+      const date = (entry.date || "").toLowerCase();
+      const matchesSearch =
+        remarks.includes(s) ||
+        party.includes(s) ||
+        category.includes(s) ||
+        paymentMode.includes(s) ||
+        amount.includes(s) ||
+        date.includes(s);
+
+      if (!matchesSearch) return false;
+    }
+
+    // 2. Duration / Date filter
+    const entryDate = normalizeDate(entry.date);
+    if (!matchesDateDuration(entryDate, currentFilters)) {
+      return false;
+    }
+
+    // 3. Type filter
+    if (currentFilters.type !== "All" && entry.type !== currentFilters.type) {
+      return false;
+    }
+
+    // 4. Party filter
+    if (
+      currentFilters.party !== "All" &&
+      entry.partyName !== currentFilters.party
+    ) {
+      return false;
+    }
+
+    // 5. Payment Mode filter
+    if (
+      currentFilters.paymentMode !== "All" &&
+      entry.paymentMode !== currentFilters.paymentMode
+    ) {
+      return false;
+    }
+
+    // 6. Category filter
+    if (
+      currentFilters.category !== "All" &&
+      entry.category !== currentFilters.category
+    ) {
+      return false;
+    }
+
+    return true;
+  });
 
   //Function to delete Table data
   const handleDeleteSelected = async (selectedIds) => {
