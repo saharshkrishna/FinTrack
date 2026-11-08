@@ -1,6 +1,6 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { FiSearch } from "react-icons/fi";
+import { FiSearch, FiPlus, FiMinus, FiArrowUpRight, FiArrowDownRight, FiCreditCard } from "react-icons/fi";
 import LoanReModal from "./modal/LoanReModal";
 import LoanModal from "./modal/LoanModal";
 import CashinModal from "./modal/CashinModal";
@@ -14,18 +14,18 @@ const Search = ({ onSearch }) => {
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
-    onSearch(value); // Pass the search term to the parent component
+    onSearch(value);
   };
 
   return (
-    <div className="relative flex-grow">
-      <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+    <div className="relative flex-1 min-w-[220px]">
+      <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
       <input
         type="text"
-        placeholder="Search by remark or amount..."
+        placeholder="Search remarks, amount, party..."
         value={searchTerm}
         onChange={handleSearchChange}
-        className="w-[300px] pl-10 pr-4 py-2 border rounded-lg"
+        className="w-full pl-9 pr-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 transition-all shadow-2xs"
       />
     </div>
   );
@@ -37,87 +37,89 @@ Search.propTypes = {
 
 const Actnbtn = ({ addEntry }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState(null); // Track which modal is open
+  const [modalType, setModalType] = useState(null);
 
   const openModal = (type) => {
-    setModalType(type); // Set the modal type
-    setIsModalOpen(true); // Open the modal
+    setModalType(type);
+    setIsModalOpen(true);
   };
 
   const handleAddLoanRe = (entry) => {
-    addEntry(entry); // Add the loan entry to the table
-    setIsModalOpen(false); // Close the modal
+    addEntry(entry);
+    setIsModalOpen(false);
   };
 
   const handleAddLoan = (entry) => {
-    addEntry(entry); // Add the loan entry to the table
-    setIsModalOpen(false); // Close the modal
+    addEntry(entry);
+    setIsModalOpen(false);
   };
 
   const handleAddDebit = (entry) => {
-    addEntry(entry); // Add the Debit entry to the table
-    setIsModalOpen(false); // Close the modal
+    addEntry(entry);
+    setIsModalOpen(false);
   };
 
   const handleAddCredit = (entry) => {
-    console.log("Adding Credit Entry:", entry); // Debugging
-    addEntry(entry); // Add the credit entry to the table
-    setIsModalOpen(false); // Close the modal
+    addEntry(entry);
+    setIsModalOpen(false);
   };
 
   const closeModal = () => setIsModalOpen(false);
 
   return (
-    <div className="flex gap-4">
-      {/* LoanRe button */}
-      <button
-        onClick={() => openModal("LoanRe")} // Open Loan modal
-        className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-      >
-        LoanRe
-      </button>
+    <div className="flex flex-wrap items-center gap-2">
+      {/* Secondary Accounting Actions */}
+      <div className="inline-flex items-center rounded-lg border border-slate-200 bg-white p-0.5 shadow-2xs">
+        <button
+          onClick={() => openModal("Credit")}
+          className="px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:text-slate-950 hover:bg-slate-50 rounded-md transition-colors cursor-pointer"
+          title="Record customer receivable / credit"
+        >
+          Credit
+        </button>
+        <button
+          onClick={() => openModal("Debit")}
+          className="px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:text-slate-950 hover:bg-slate-50 rounded-md transition-colors cursor-pointer border-l border-slate-100"
+          title="Record vendor payable / debit"
+        >
+          Debit
+        </button>
+        <button
+          onClick={() => openModal("Loan")}
+          className="px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:text-slate-950 hover:bg-slate-50 rounded-md transition-colors cursor-pointer border-l border-slate-100"
+          title="Record new loan"
+        >
+          Loan
+        </button>
+        <button
+          onClick={() => openModal("LoanRe")}
+          className="px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:text-slate-950 hover:bg-slate-50 rounded-md transition-colors cursor-pointer border-l border-slate-100"
+          title="Record loan repayment"
+        >
+          Loan Re
+        </button>
+      </div>
 
-      {/* Loan button */}
+      {/* Primary Inflow & Outflow Actions */}
       <button
-        onClick={() => openModal("Loan")} // Open Loan modal
-        className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-      >
-        Loan
-      </button>
-
-      {/* Debit button */}
-      <button
-        onClick={() => openModal("Debit")} // Open Debit modal
-        className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-      >
-        Debit
-      </button>
-
-      {/* Credit button */}
-      <button
-        onClick={() => openModal("Credit")} // Open Credit modal
-        className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-      >
-        Credit
-      </button>
-
-      {/* Cash In Button */}
-      <button
-        className="px-4 py-2 bg-green-600 text-white rounded-lg"
         onClick={() => openModal("Cash In")}
+        className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition-all shadow-2xs flex items-center gap-1 active:scale-95 cursor-pointer"
+        title="Add Cash Inflow entry"
       >
-        Cash In
+        <FiPlus className="text-xs" />
+        <span>Cash In</span>
       </button>
 
-      {/* Cash Out Button */}
       <button
-        className="px-4 py-2 bg-red-600 text-white rounded-lg"
         onClick={() => openModal("Cash Out")}
+        className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold transition-all shadow-2xs flex items-center gap-1 active:scale-95 cursor-pointer"
+        title="Add Cash Outflow entry"
       >
-        Cash Out
+        <FiMinus className="text-xs" />
+        <span>Cash Out</span>
       </button>
 
-      {/* Modals */}
+      {/* Entry Form Modals */}
       {isModalOpen && modalType === "Cash In" && (
         <CashinModal
           onClose={closeModal}
@@ -135,14 +137,14 @@ const Actnbtn = ({ addEntry }) => {
       {isModalOpen && modalType === "Credit" && (
         <CreditModal
           onClose={closeModal}
-          type="Credit" // Pass the type prop
+          type="Credit"
           onSubmit={handleAddCredit}
         />
       )}
       {isModalOpen && modalType === "Debit" && (
         <DebitModal
           onClose={closeModal}
-          type="Debit" // Pass the type prop
+          type="Debit"
           onSubmit={handleAddDebit}
         />
       )}
@@ -164,9 +166,13 @@ const Actnbtn = ({ addEntry }) => {
   );
 };
 
-const SearchAndActions = ({ addEntry,onSearch }) => {
+Actnbtn.propTypes = {
+  addEntry: PropTypes.func.isRequired,
+};
+
+const SearchAndActions = ({ addEntry, onSearch }) => {
   return (
-    <div className="flex items-center gap-4 mb-6">
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
       <Search onSearch={onSearch} />
       <Actnbtn addEntry={addEntry} />
     </div>
@@ -176,11 +182,6 @@ const SearchAndActions = ({ addEntry,onSearch }) => {
 SearchAndActions.propTypes = {
   addEntry: PropTypes.func.isRequired,
   onSearch: PropTypes.func.isRequired,
-};
-
-Actnbtn.propTypes = {
-  addEntry: PropTypes.func.isRequired,
-
 };
 
 export default SearchAndActions;

@@ -25,7 +25,7 @@ exports.signup = async (req, res) => {
 
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedName = name.trim();
-    
+
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({ error: 'Email already registered' });
@@ -45,7 +45,7 @@ exports.signup = async (req, res) => {
     await user.save();
 
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
-    
+
     res.status(201).json({
       message: 'User created successfully',
       token,
@@ -68,7 +68,7 @@ exports.login = async (req, res) => {
     // Support identifier, email, business_id, or businessId
     const identifier = req.body.identifier || req.body.email || req.body.business_id || req.body.businessId;
     const { password } = req.body;
-    
+
     if (!identifier || !password) {
       return res.status(400).json({ error: 'Email or Business ID and password are required' });
     }
@@ -76,48 +76,81 @@ exports.login = async (req, res) => {
     const trimmed = String(identifier).trim();
     const normalizedEmail = trimmed.toLowerCase();
 
-    // 1. Try finding by email
-    let user = await User.findOne({ email: normalizedEmail }).populate('businesses');
+    // Check for static tester credentials in env
+    const envTesterEmail = (process.env.TESTER_EMAIL || 'tester@fintrack.com').trim().toLowerCase();
+    const envTesterPassword = process.env.TESTER_PASSWORD || 'Tester@123';
+    const envTesterName = process.env.TESTER_NAME || 'FinTrack Tester';
+
+    const isTesterStaticLogin = (normalizedEmail === envTesterEmail || trimmed === 'BIZ-TEST') && (password === envTesterPassword);
+
+    let user = null;
     let matchedBusiness = null;
 
-    // 2. If not found by email, try finding by Business ID or business code or business name
-    if (!user) {
-      let business = null;
-
-      // Check if it's a valid MongoDB ObjectId
-      if (mongoose.Types.ObjectId.isValid(trimmed)) {
-        business = await Business.findById(trimmed);
-      }
-
-      // Check if it matches businessId code or name
-      if (!business) {
-        business = await Business.findOne({
-          $or: [
-            { businessId: trimmed },
-            { businessId: trimmed.toUpperCase() },
-            { name: { $regex: new RegExp(`^${trimmed}$`, 'i') } }
-          ]
+    if (isTesterStaticLogin) {
+      // Find or auto-provision static tester user
+      user = await User.findOne({ email: envTesterEmail }).populate('businesses');
+      if (!user) {
+        user = new User({
+          name: envTesterName,
+          email: envTesterEmail,
+          password: envTesterPassword
         });
-      }
+        await user.save();
 
-      if (business) {
-        matchedBusiness = business;
-        const ownerId = business.owner || business.userId;
-        if (ownerId) {
-          user = await User.findById(ownerId).populate('businesses');
-        } else {
-          user = await User.findOne({ businesses: business._id }).populate('businesses');
+        const business = await Business.create({
+          businessId: 'BIZ-TEST',
+          name: `${envTesterName}'s Ledger`,
+          owner: user._id,
+          currency: 'INR'
+        });
+
+        user.businesses.push(business._id);
+        await user.save();
+        user = await User.findById(user._id).populate('businesses');
+      }
+    } else {
+      // 1. Try finding by email
+      user = await User.findOne({ email: normalizedEmail }).populate('businesses');
+
+      // 2. If not found by email, try finding by Business ID or business code or business name
+      if (!user) {
+        let business = null;
+
+        // Check if it's a valid MongoDB ObjectId
+        if (mongoose.Types.ObjectId.isValid(trimmed)) {
+          business = await Business.findById(trimmed);
+        }
+
+        // Check if it matches businessId code or name
+        if (!business) {
+          business = await Business.findOne({
+            $or: [
+              { businessId: trimmed },
+              { businessId: trimmed.toUpperCase() },
+              { name: { $regex: new RegExp(`^${trimmed}$`, 'i') } }
+            ]
+          });
+        }
+
+        if (business) {
+          matchedBusiness = business;
+          const ownerId = business.owner || business.userId;
+          if (ownerId) {
+            user = await User.findById(ownerId).populate('businesses');
+          } else {
+            user = await User.findOne({ businesses: business._id }).populate('businesses');
+          }
         }
       }
-    }
 
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid email/business ID or password' });
-    }
+      if (!user) {
+        return res.status(401).json({ error: 'Invalid email/business ID or password' });
+      }
 
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid email/business ID or password' });
+      const isMatch = await user.comparePassword(password);
+      if (!isMatch) {
+        return res.status(401).json({ error: 'Invalid email/business ID or password' });
+      }
     }
 
     let businessId = matchedBusiness ? matchedBusiness._id : user.businesses?.[0]?._id;
@@ -136,7 +169,7 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
-    
+
     res.json({
       message: 'Login successful',
       token,
@@ -145,7 +178,7 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email,
         businessId: businessId.toString(),
-        businessCode: matchedBusiness?.businessId || businesses[0]?.businessId,
+        businessCode: matchedBusiness?.businessId || businesses[0]?.businessId || 'BIZ-MAIN',
         businesses
       }
     });
@@ -199,7 +232,7 @@ exports.verifyToken = async (req, res) => {
       businessId = defaultBiz._id;
       businesses = [defaultBiz];
     }
-    
+
     res.json({
       user: {
         id: user._id,

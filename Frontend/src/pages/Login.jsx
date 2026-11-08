@@ -6,6 +6,10 @@ import './Auth.css';
 const Login = () => {
   const navigate = useNavigate();
   const { login, user, loading: authLoading } = useContext(AuthContext);
+  
+  const TESTER_EMAIL = import.meta.env.VITE_TESTER_EMAIL || 'tester@fintrack.com';
+  const TESTER_PASSWORD = import.meta.env.VITE_TESTER_PASSWORD || 'Tester@123';
+
   const [formData, setFormData] = useState({
     identifier: '',
     password: ''
@@ -15,7 +19,7 @@ const Login = () => {
 
   useEffect(() => {
     if (user && !authLoading) {
-      navigate('/');
+      navigate('/expense-book');
     }
   }, [user, authLoading, navigate]);
 
@@ -27,6 +31,14 @@ const Login = () => {
     setError('');
   };
 
+  const fillTesterCredentials = () => {
+    setFormData({
+      identifier: TESTER_EMAIL,
+      password: TESTER_PASSWORD
+    });
+    setError('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -34,7 +46,7 @@ const Login = () => {
 
     try {
       await login(formData.identifier, formData.password);
-      navigate('/');
+      navigate('/expense-book');
     } catch (err) {
       setError(err.response?.data?.error || err.response?.data?.message || 'Invalid email/business ID or password.');
     } finally {
@@ -53,15 +65,36 @@ const Login = () => {
       <div className="auth-content">
         <div className="auth-card">
           <div className="auth-header">
-            <div className="auth-logo">
+            <Link to="/" className="auth-logo inline-block cursor-pointer hover:opacity-85 transition-opacity" title="Back to Home">
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 <path d="M12 22V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 <path d="M22 7L12 12L2 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-            </div>
+            </Link>
             <h1 className="auth-title">Welcome to FinTrack</h1>
             <p className="auth-subtitle">Smart financial management made simple</p>
+          </div>
+
+          {/* Static Tester Credentials Box */}
+          <div className="mb-5 p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3 text-xs">
+            <div className="overflow-hidden">
+              <div className="font-semibold text-slate-900 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span>Tester Account Ready</span>
+              </div>
+              <div className="text-slate-500 font-mono text-[11px] truncate mt-0.5">
+                {TESTER_EMAIL}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={fillTesterCredentials}
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors cursor-pointer text-xs shadow-2xs shrink-0"
+              title="Auto-fill tester email and password"
+            >
+              Use Tester Login
+            </button>
           </div>
 
           <form onSubmit={handleSubmit} className="auth-form">

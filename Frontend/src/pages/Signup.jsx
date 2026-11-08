@@ -17,7 +17,7 @@ const Signup = () => {
 
   useEffect(() => {
     if (user && !authLoading) {
-      navigate('/');
+      navigate('/expense-book');
     }
   }, [user, authLoading, navigate]);
 
@@ -47,7 +47,7 @@ const Signup = () => {
 
     try {
       await signup(formData.name, formData.email, formData.password);
-      navigate('/');
+      navigate('/expense-book');
     } catch (err) {
       setError(err.response?.data?.error || err.response?.data?.message || 'Signup failed. Please try again.');
     } finally {
@@ -66,13 +66,13 @@ const Signup = () => {
       <div className="auth-content">
         <div className="auth-card">
           <div className="auth-header">
-            <div className="auth-logo">
+            <Link to="/" className="auth-logo inline-block cursor-pointer hover:opacity-85 transition-opacity" title="Back to Home">
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M12 22V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M22 7L12 12L2 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-            </div>
+            </Link>
             <h1 className="auth-title">Create an Account</h1>
             <p className="auth-subtitle">Start managing your business finances smartly</p>
           </div>

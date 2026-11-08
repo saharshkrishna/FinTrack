@@ -1,27 +1,29 @@
 import PropTypes from 'prop-types';
-import Sidebar from './components/Sidebar'
+import Sidebar from './components/Sidebar';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useSidebar } from './context/SidebarContext';
 
-const Layout = ({children}) => {
+const Layout = ({ children }) => {
   const { isCollapsed } = useSidebar();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Sidebar></Sidebar>
-      <div className={`p-6 transition-all duration-300 ${
+    <div className="min-h-screen bg-[#fafafa] text-slate-900 selection:bg-blue-100 selection:text-blue-900">
+      <Sidebar />
+      <div className={`p-4 sm:p-6 transition-all duration-300 ${
         isCollapsed ? 'ml-0' : 'ml-64'
       }`}>
-        {children}
+        <div className="max-w-7xl mx-auto">
+          {children}
+        </div>
         <ToastContainer position="top-right" autoClose={3000} />
       </div>
     </div>
-  )
-}
+  );
+};
 
 Layout.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-export default Layout
+export default Layout;
