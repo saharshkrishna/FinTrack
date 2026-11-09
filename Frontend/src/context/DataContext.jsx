@@ -9,8 +9,15 @@ export const DataContext = createContext();
 
 const API_BASE_URL = "http://localhost:5000/api/user";
 
-// Ensure all requests include auth token and businessId headers
+let lastNetworkToastTime = 0;
+
+// Ensure all requests include auth token and businessId headers & track in-flight requests
 axios.interceptors.request.use((config) => {
+  // Dispatch in-flight request start for the top progress bar
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('fintrack:request-start'));
+  }
+
   const token = localStorage.getItem('token');
   const businessId = localStorage.getItem('businessId');
   if (token) {
@@ -28,16 +35,86 @@ axios.interceptors.request.use((config) => {
     }
   }
   return config;
+}, (error) => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('fintrack:request-end'));
+  }
+  return Promise.reject(error);
 });
 
-// Capture any returned x-business-id from response
-axios.interceptors.response.use((response) => {
-  const returnedBizId = response.headers?.['x-business-id'];
-  if (returnedBizId && !localStorage.getItem('businessId')) {
-    localStorage.setItem('businessId', returnedBizId);
+// Centralized response interceptor for error handling, network status & tokens
+axios.interceptors.response.use(
+  (response) => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('fintrack:request-end'));
+      window.dispatchEvent(new CustomEvent('fintrack:network-ok'));
+    }
+
+    const returnedBizId = response.headers?.['x-business-id'];
+    if (returnedBizId && !localStorage.getItem('businessId')) {
+      localStorage.setItem('businessId', returnedBizId);
+    }
+    return response;
+  },
+  (error) => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('fintrack:request-end'));
+    }
+
+    // 1. Network / Connection Errors
+    const isNetworkError = 
+      !error.response || 
+      error.code === 'ERR_NETWORK' || 
+      error.code === 'ECONNABORTED' ||
+      error.message?.includes('Network Error') ||
+      error.message?.includes('timeout');
+
+    if (isNetworkError) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('fintrack:network-error', {
+          detail: { message: error.message || 'Server connection failed' }
+        }));
+      }
+
+      const now = Date.now();
+      // Debounce network toast to at most once per 6 seconds
+      if (now - lastNetworkToastTime > 6000) {
+        lastNetworkToastTime = now;
+        toast.error('Unable to reach server. Please check your network connection.', {
+          toastId: 'global-network-error',
+          autoClose: 3500
+        });
+      }
+      return Promise.reject(error);
+    }
+
+    // 2. HTTP Status Code Errors
+    const status = error.response?.status;
+    const errorMsg = error.response?.data?.error || error.response?.data?.message;
+
+    if (status === 401) {
+      // Avoid redirecting if verifying token initially
+      if (!error.config?.url?.includes('/api/auth/verify')) {
+        toast.error(errorMsg || 'Session expired. Please sign in again.', {
+          toastId: 'auth-expired',
+          autoClose: 3000
+        });
+      }
+    } else if (status === 403) {
+      toast.error(errorMsg || 'Access denied: You do not have permission for this business.', {
+        toastId: 'forbidden-error',
+        autoClose: 3500
+      });
+    } else if (status >= 500) {
+      toast.error(errorMsg || 'Server error occurred. Please try again.', {
+        toastId: 'server-500-error',
+        autoClose: 3500
+      });
+    }
+
+    return Promise.reject(error);
   }
-  return response;
-});
+);
 
 export const DataProvider = ({ children }) => {
   const { user, activeBusiness } = useContext(AuthContext);
@@ -68,7 +145,8 @@ export const DataProvider = ({ children }) => {
       setError(null);
     } catch (err) {
       console.error("Error fetching shared data:", err);
-      setError("Error fetching data");
+      const isNetErr = !err.response || err.code === 'ERR_NETWORK';
+      setError(isNetErr ? "Network connection error: Unable to reach server" : (err.response?.data?.error || "Error fetching data"));
     } finally {
       setLoading(false);
     }
@@ -76,6 +154,16 @@ export const DataProvider = ({ children }) => {
 
   useEffect(() => {
     fetchAllData();
+
+    // Auto-refresh when network connection is restored
+    const handleNetworkRestored = () => {
+      fetchAllData();
+    };
+    window.addEventListener('fintrack:network-restored', handleNetworkRestored);
+
+    return () => {
+      window.removeEventListener('fintrack:network-restored', handleNetworkRestored);
+    };
   }, [user, activeBusiness?._id]);
 
   // ==================== Party APIs ====================

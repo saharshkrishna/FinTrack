@@ -49,6 +49,11 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 const businessMiddleware = require('./middleware/business');
 
+// Health check endpoint for connection probing
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
+});
+
 // Mount all route files with their respective API paths
 app.use('/api/user/transactions', businessMiddleware, transactionRoutes);
 app.use('/api/user/loans', businessMiddleware, loanRoutes);
@@ -61,20 +66,46 @@ app.use('/api/business', businessRoutes);
 app.use('/api/user/business', businessRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-//function to start the server with async/await and error handling
+
+// Global 404 handler for unknown routes
+app.use((req, res, next) => {
+    res.status(404).json({ error: `Cannot ${req.method} ${req.originalUrl}`, statusCode: 404 });
+});
+
+// Global centralized Express error-handling middleware
+app.use((err, req, res, next) => {
+    console.error(`[API Error] ${req.method} ${req.originalUrl}:`, err.stack || err.message || err);
+    const statusCode = err.statusCode || err.status || 500;
+    res.status(statusCode).json({
+        error: err.message || 'Internal Server Error',
+        statusCode
+    });
+});
+
+// Process-level crash prevention guards
+process.on('unhandledRejection', (reason, promise) => {
+    console.warn('[Process Warning] Unhandled Rejection at:', promise, 'reason:', reason?.message || reason);
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('[Process Error] Uncaught Exception:', err.message, err.stack);
+});
+//function to start the server with async/await and robust retry error handling
 const StartServer = async (MONGODB_URL) => {
-    try {
-        //passing mongoDB url to database connecting function
-        await connectDB(MONGODB_URL);
-        
-        //make the server to listen the port  
-        app.listen(PORT, () => {
-            console.log(`Server started successfully on port ${PORT}`);
-        });
-    } catch (error) {
-        console.error('Failed to start server:', error.message);
-        console.error('Error details:', error);
-        process.exit(1);
-    }
+    // Start listening immediately so health checks and loaders can probe connectivity
+    app.listen(PORT, () => {
+        console.log(`Server started successfully on port ${PORT}`);
+    });
+
+    const connectWithRetry = async (attempt = 1) => {
+        try {
+            await connectDB(MONGODB_URL);
+        } catch (error) {
+            console.warn(`[DB Warning] Connection attempt #${attempt} failed: ${error.message}. Retrying in 3s...`);
+            setTimeout(() => connectWithRetry(attempt + 1), 3000);
+        }
+    };
+
+    connectWithRetry();
 };
 StartServer(MONGODB_URL);

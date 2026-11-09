@@ -37,6 +37,7 @@ import {
   ResponsiveContainer
 } from "recharts";
 import ReportModal from "../components/modal/ReportModal";
+import NetworkErrorCard from "../components/common/NetworkErrorCard";
 
 const PALETTE = [
   "#3B82F6", // blue
@@ -60,7 +61,7 @@ const TIME_RANGES = [
 
 const FinancialOverview = () => {
   const navigate = useNavigate();
-  const { transactions, loans, fetchAllData, loading } = useContext(DataContext);
+  const { transactions, loans, fetchAllData, loading, error } = useContext(DataContext);
   const { activeBusiness } = useContext(AuthContext);
 
   const [timeRange, setTimeRange] = useState("all");
@@ -413,6 +414,26 @@ const FinancialOverview = () => {
       due: "Ongoing"
     }
   ];
+
+  if (error && (!transactions || transactions.length === 0)) {
+    return (
+      <div className="space-y-6 pb-12">
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex items-center justify-between">
+          <button
+            onClick={() => navigate("/")}
+            className="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer flex items-center gap-2 text-xs font-semibold"
+          >
+            <FiArrowLeft className="text-base" /> Back to Expense Book
+          </button>
+        </div>
+        <NetworkErrorCard
+          title="Overview Analytics Unavailable"
+          message={error || "Could not retrieve transaction metrics due to a network or server communication error."}
+          onRetry={handleRefresh}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-200">

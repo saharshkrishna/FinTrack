@@ -7,6 +7,7 @@ import Summary from "../components/Summary";
 import Table from "../components/Table";
 import BulkEntryModal from "../components/modal/BulkEntryModal";
 import ReportModal from "../components/modal/ReportModal";
+import NetworkErrorCard from "../components/common/NetworkErrorCard";
 
 // Helper to extract clean YYYY-MM-DD from various date representations
 const normalizeDate = (val) => {
@@ -133,6 +134,8 @@ const ExpenseBook = () => {
   // Get transaction operations from context
   const { 
     transactions, 
+    error,
+    refreshData,
     createTransaction, 
     updateTransaction, 
     deleteTransactions 
@@ -265,19 +268,30 @@ const ExpenseBook = () => {
   return (
     <div>
       <Header onOpenBulkImport={() => setIsBulkModalOpen(true)} onOpenReport={() => setIsReportModalOpen(true)} />
-      {/* Pass filters and handleFilterChange to Filters component */}
-      <Filters
-        filterOptions={filterOptions}
-        onFilterChange={handleFilterChange}
-      />
-      <SearchAndActions addEntry={addEntry} onSearch={handleSearch} />
-      {/* Pass filters and transactions to Summary component */}
-      <Summary tableData={transactions} filters={filteredData} />
-      <Table
-        tableData={filteredData} // filters={filteredData}
-        updateEntry={updateEntry}
-        onDeleteSelected={handleDeleteSelected} // Pass the delete handler
-      />
+      
+      {error && (!transactions || transactions.length === 0) ? (
+        <NetworkErrorCard
+          title="Could not load financial records"
+          message={error || "FinTrack was unable to reach the backend service to retrieve your transactions. Check your network or server status."}
+          onRetry={refreshData}
+        />
+      ) : (
+        <>
+          {/* Pass filters and handleFilterChange to Filters component */}
+          <Filters
+            filterOptions={filterOptions}
+            onFilterChange={handleFilterChange}
+          />
+          <SearchAndActions addEntry={addEntry} onSearch={handleSearch} />
+          {/* Pass filters and transactions to Summary component */}
+          <Summary tableData={transactions} filters={filteredData} />
+          <Table
+            tableData={filteredData} // filters={filteredData}
+            updateEntry={updateEntry}
+            onDeleteSelected={handleDeleteSelected} // Pass the delete handler
+          />
+        </>
+      )}
       
       {/* Bulk Entry Excel Import Modal */}
       <BulkEntryModal

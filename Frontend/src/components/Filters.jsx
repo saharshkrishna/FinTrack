@@ -16,7 +16,7 @@ const Filters = ({ onFilterChange = () => {} }) => {
   });
 
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
-  const { parties, categories, paymentModes, transactions, loading, error } = useContext(DataContext);
+  const { parties, categories, paymentModes, transactions, loading, error, refreshData } = useContext(DataContext);
 
   // Derive all unique, non-empty, sorted categories from both Category collection & active transactions
   const availableCategories = useMemo(() => {
@@ -58,10 +58,27 @@ const Filters = ({ onFilterChange = () => {} }) => {
   }, [parties, transactions]);
 
   if (loading && (!transactions || transactions.length === 0)) {
-    return <div className="text-xs text-slate-400 py-2">Loading filters...</div>;
+    return (
+      <div className="flex items-center gap-2 text-xs text-slate-400 py-2">
+        <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
+        <span>Loading filters...</span>
+      </div>
+    );
   }
   if (error && (!transactions || transactions.length === 0)) {
-    return <div className="text-xs text-rose-500 py-2">{error}</div>;
+    return (
+      <div className="flex items-center gap-2 text-xs py-2">
+        <span className="text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-md font-medium">
+          Filter data unavailable ({error})
+        </span>
+        <button
+          onClick={() => refreshData && refreshData()}
+          className="text-blue-600 hover:text-blue-800 font-semibold underline cursor-pointer"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   const handleFilterChange = (filterType, value) => {
