@@ -61,8 +61,8 @@ export const DataProvider = ({ children }) => {
       ]);
       
       setParties(partiesResponse.data.parties || []);
-      setCategories(categoriesResponse.data.category || []);
-      setPaymentModes(paymentModesResponse.data.paymentMode || []);
+      setCategories(categoriesResponse.data.category || categoriesResponse.data.categories || []);
+      setPaymentModes(paymentModesResponse.data.paymentMode || paymentModesResponse.data.paymentModes || []);
       setLoans(loansResponse.data.loans || []);
       setTransactions(transactionsResponse.data.transactions || []);
       setError(null);
@@ -146,6 +146,8 @@ export const DataProvider = ({ children }) => {
       const response = await axios.post(`${API_BASE_URL}/transactions`, transactionData);
       const newTransaction = response.data.transaction;
       setTransactions((prev) => [newTransaction, ...prev]);
+      // Refresh shared metadata (categories, parties, payment modes) if new ones were auto-created
+      fetchAllData();
       toast.success("Transaction created successfully");
       return newTransaction;
     } catch (error) {
@@ -159,7 +161,8 @@ export const DataProvider = ({ children }) => {
     try {
       const response = await axios.post(`${API_BASE_URL}/transactions/bulk`, { transactions: transactionsList });
       const newTransactions = response.data.transactions || [];
-      setTransactions((prev) => [...newTransactions, ...prev]);
+      // Re-fetch all shared data to synchronize new categories, payment modes, parties, and transactions
+      await fetchAllData();
       toast.success(response.data.message || `Imported ${newTransactions.length} entries successfully`);
       return newTransactions;
     } catch (error) {

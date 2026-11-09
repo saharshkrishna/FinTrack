@@ -5,7 +5,7 @@ import EntryDetails from "./modal/EntryDetails";
 import LoanEntryModal from "./modal/LoanEntryDetails";
 import Pagination from "./Pagination";
 
-const Table = ({ tableData, updateEntry, onDeleteSelected }) => {
+const Table = ({ tableData = [], updateEntry = () => {}, onDeleteSelected = () => {} }) => {
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [isEntryDetailsOpen, setIsEntryDetailsOpen] = useState(false);
   const [isLoanEntryModalOpen, setIsLoanEntryModalOpen] = useState(false);
@@ -256,9 +256,9 @@ const Table = ({ tableData, updateEntry, onDeleteSelected }) => {
 };
 
 Table.propTypes = {
-  tableData: PropTypes.array.isRequired,
-  updateEntry: PropTypes.func.isRequired,
-  onDeleteSelected: PropTypes.func.isRequired,
+  tableData: PropTypes.array,
+  updateEntry: PropTypes.func,
+  onDeleteSelected: PropTypes.func,
 };
 
 export default Table;

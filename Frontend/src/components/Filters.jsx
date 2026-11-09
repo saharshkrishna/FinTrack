@@ -1,10 +1,10 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useMemo } from "react";
 import PropTypes from "prop-types";
 import { FiCalendar, FiFilter, FiRotateCcw } from "react-icons/fi";
 import { DataContext } from "../context/DataContext";
 import DateModal from "./modal/DateModal";
 
-const Filters = ({ onFilterChange }) => {
+const Filters = ({ onFilterChange = () => {} }) => {
   const [selectedFilters, setSelectedFilters] = useState({
     duration: "All Time",
     type: "All",
@@ -16,10 +16,53 @@ const Filters = ({ onFilterChange }) => {
   });
 
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
-  const { parties, categories, paymentModes, loading, error } = useContext(DataContext);
+  const { parties, categories, paymentModes, transactions, loading, error } = useContext(DataContext);
 
-  if (loading) return <div className="text-xs text-slate-400 py-2">Loading filters...</div>;
-  if (error) return <div className="text-xs text-rose-500 py-2">{error}</div>;
+  // Derive all unique, non-empty, sorted categories from both Category collection & active transactions
+  const availableCategories = useMemo(() => {
+    const set = new Set();
+    (categories || []).forEach((c) => {
+      const name = typeof c === "string" ? c : c?.category;
+      if (name && String(name).trim()) set.add(String(name).trim());
+    });
+    (transactions || []).forEach((t) => {
+      if (t?.category && String(t.category).trim()) set.add(String(t.category).trim());
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [categories, transactions]);
+
+  // Derive all unique, non-empty, sorted payment modes from both PaymentMode collection & active transactions
+  const availablePaymentModes = useMemo(() => {
+    const set = new Set();
+    (paymentModes || []).forEach((p) => {
+      const mode = typeof p === "string" ? p : p?.paymentMode;
+      if (mode && String(mode).trim()) set.add(String(mode).trim());
+    });
+    (transactions || []).forEach((t) => {
+      if (t?.paymentMode && String(t.paymentMode).trim()) set.add(String(t.paymentMode).trim());
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [paymentModes, transactions]);
+
+  // Derive all unique, non-empty, sorted parties from both Party collection & active transactions
+  const availableParties = useMemo(() => {
+    const set = new Set();
+    (parties || []).forEach((p) => {
+      const name = typeof p === "string" ? p : p?.partyName;
+      if (name && String(name).trim()) set.add(String(name).trim());
+    });
+    (transactions || []).forEach((t) => {
+      if (t?.partyName && String(t.partyName).trim()) set.add(String(t.partyName).trim());
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [parties, transactions]);
+
+  if (loading && (!transactions || transactions.length === 0)) {
+    return <div className="text-xs text-slate-400 py-2">Loading filters...</div>;
+  }
+  if (error && (!transactions || transactions.length === 0)) {
+    return <div className="text-xs text-rose-500 py-2">{error}</div>;
+  }
 
   const handleFilterChange = (filterType, value) => {
     const updatedFilters = { ...selectedFilters, [filterType]: value };
@@ -34,7 +77,9 @@ const Filters = ({ onFilterChange }) => {
     }
 
     setSelectedFilters(updatedFilters);
-    onFilterChange(updatedFilters);
+    if (typeof onFilterChange === "function") {
+      onFilterChange(updatedFilters);
+    }
   };
 
   const handleResetFilters = () => {
@@ -146,9 +191,9 @@ const Filters = ({ onFilterChange }) => {
             onChange={(e) => handleFilterChange("party", e.target.value)}
           >
             <option value="All">Party: All</option>
-            {parties?.map((party, index) => (
-              <option key={index} value={party.partyName}>
-                {party.partyName}
+            {availableParties.map((partyName) => (
+              <option key={partyName} value={partyName}>
+                {partyName}
               </option>
             ))}
           </select>
@@ -162,9 +207,9 @@ const Filters = ({ onFilterChange }) => {
             onChange={(e) => handleFilterChange("paymentMode", e.target.value)}
           >
             <option value="All">Mode: All</option>
-            {paymentModes?.map((paymentMode, index) => (
-              <option key={index} value={paymentMode.paymentMode}>
-                {paymentMode.paymentMode}
+            {availablePaymentModes.map((mode) => (
+              <option key={mode} value={mode}>
+                {mode}
               </option>
             ))}
           </select>
@@ -178,9 +223,9 @@ const Filters = ({ onFilterChange }) => {
             onChange={(e) => handleFilterChange("category", e.target.value)}
           >
             <option value="All">Category: All</option>
-            {categories?.map((categoryObj) => (
-              <option key={categoryObj._id} value={categoryObj.category}>
-                {categoryObj.category}
+            {availableCategories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
               </option>
             ))}
           </select>
@@ -216,7 +261,7 @@ const Filters = ({ onFilterChange }) => {
 
 Filters.propTypes = {
   filterOptions: PropTypes.object,
-  onFilterChange: PropTypes.func.isRequired,
+  onFilterChange: PropTypes.func,
 };
 
 export default Filters;

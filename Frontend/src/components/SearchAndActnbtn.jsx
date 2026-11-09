@@ -170,7 +170,7 @@ Actnbtn.propTypes = {
   addEntry: PropTypes.func.isRequired,
 };
 
-const SearchAndActions = ({ addEntry, onSearch }) => {
+const SearchAndActions = ({ addEntry = () => {}, onSearch = () => {} }) => {
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
       <Search onSearch={onSearch} />
@@ -180,8 +180,8 @@ const SearchAndActions = ({ addEntry, onSearch }) => {
 };
 
 SearchAndActions.propTypes = {
-  addEntry: PropTypes.func.isRequired,
-  onSearch: PropTypes.func.isRequired,
+  addEntry: PropTypes.func,
+  onSearch: PropTypes.func,
 };
 
 export default SearchAndActions;

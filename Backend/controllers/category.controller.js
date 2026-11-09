@@ -1,25 +1,35 @@
 const Category = require("../MongoDb/models/userModels/Category");
+const Transaction = require("../MongoDb/models/userModels/Transaction");
+
+const DEFAULT_CATEGORIES = [
+  'Sales', 'Purchase', 'Rent', 'Utilities', 'Salary', 'Marketing', 'Office Supplies', 'Others'
+];
 
 // Category Apis
 exports.AddCategory = async (req, res) => {
     console.log("Received Add Category Request:", req.body);
 
     const { category } = req.body;
-    if (!category) {
+    if (!category || !String(category).trim()) {
         console.error("Error: Category is missing");
         return res.status(400).json({ message: "Category is required" });
     }
 
+    const trimmedCategory = String(category).trim();
+
     try {
         console.log("Checking if category already exists...");
-        const existingCategory = await Category.findOne({ category, businessId: req.businessId });
+        const existingCategory = await Category.findOne({
+            businessId: req.businessId,
+            category: { $regex: new RegExp(`^${trimmedCategory}$`, 'i') }
+        });
         if (existingCategory) {
             console.warn("Category already exists:", existingCategory);
-            return res.status(400).json({ message: "Category already exists" });
+            return res.status(200).json({ message: "Category already exists", category: existingCategory });
         }
 
         console.log("Saving new category...");
-        const newCategory = new Category({ category, businessId: req.businessId });
+        const newCategory = new Category({ category: trimmedCategory, businessId: req.businessId });
         await newCategory.save();
         console.log("Category added successfully:", newCategory);
 
@@ -32,10 +42,49 @@ exports.AddCategory = async (req, res) => {
 
 exports.getCategory = async (req, res) => {
     try {
-        console.log("Fetching all categories...");
-        const categories = await Category.find({ businessId: req.businessId });
-        console.log("Fetched Categories:", categories);
-        res.status(200).json({ category: categories });
+        let categories = await Category.find({ businessId: req.businessId });
+
+        // Auto-sync any categories present in transactions for this business
+        try {
+            const txCategories = await Transaction.distinct("category", {
+                businessId: req.businessId,
+                category: { $nin: ["", null] }
+            });
+
+            if (txCategories && txCategories.length > 0) {
+                const existingNames = new Set(categories.map(c => (c.category || '').trim().toLowerCase()));
+                const missingCats = txCategories
+                    .map(c => (c ? String(c).trim() : ''))
+                    .filter(c => c && !existingNames.has(c.toLowerCase()));
+
+                if (missingCats.length > 0) {
+                    const toInsert = missingCats.map(cat => ({
+                        businessId: req.businessId,
+                        category: cat
+                    }));
+                    await Category.insertMany(toInsert, { ordered: false });
+                    categories = await Category.find({ businessId: req.businessId });
+                }
+            }
+        } catch (syncErr) {
+            console.warn("Error syncing transaction categories:", syncErr.message);
+        }
+
+        // If business still has zero categories, seed default categories
+        if (!categories || categories.length === 0) {
+            try {
+                const toInsert = DEFAULT_CATEGORIES.map(cat => ({
+                    businessId: req.businessId,
+                    category: cat
+                }));
+                await Category.insertMany(toInsert, { ordered: false });
+                categories = await Category.find({ businessId: req.businessId });
+            } catch (seedErr) {
+                console.warn("Error seeding default categories:", seedErr.message);
+            }
+        }
+
+        res.status(200).json({ category: categories, categories });
     } catch (error) {
         console.error("Error fetching categories:", error);
         res.status(500).json({ message: "Error fetching categories", error: error.message });

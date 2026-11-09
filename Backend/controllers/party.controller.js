@@ -1,4 +1,5 @@
 const Party = require('../MongoDb/models/userModels/Party');
+const Transaction = require('../MongoDb/models/userModels/Transaction');
 
 // Add Party Function
 const AddParty = async (req, res) => {
@@ -41,7 +42,35 @@ const AddParty = async (req, res) => {
 // Get Party Function
 const getParty = async (req, res) => {
   try {
-    const parties = await Party.find({ businessId: req.businessId });
+    let parties = await Party.find({ businessId: req.businessId });
+
+    // Auto-sync any distinct party names from transactions for this business
+    try {
+      const txParties = await Transaction.distinct("partyName", {
+        businessId: req.businessId,
+        partyName: { $nin: ["", null] }
+      });
+
+      if (txParties && txParties.length > 0) {
+        const existingNames = new Set(parties.map(p => (p.partyName || '').trim().toLowerCase()));
+        const missingParties = txParties
+          .map(p => (p ? String(p).trim() : ''))
+          .filter(p => p && !existingNames.has(p.toLowerCase()));
+
+        if (missingParties.length > 0) {
+          const toInsert = missingParties.map(pName => ({
+            businessId: req.businessId,
+            partyName: pName,
+            partyType: "Supplier"
+          }));
+          await Party.insertMany(toInsert, { ordered: false });
+          parties = await Party.find({ businessId: req.businessId });
+        }
+      }
+    } catch (syncErr) {
+      console.warn("Error syncing transaction parties:", syncErr.message);
+    }
+
     res.status(200).json({
       success: true,
       message: 'Parties retrieved successfully',

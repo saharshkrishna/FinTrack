@@ -1,5 +1,11 @@
 const User = require('../MongoDb/models/userModels/User');
 const Business = require('../MongoDb/models/userModels/Business');
+const PaymentMode = require('../MongoDb/models/userModels/Payment');
+const Category = require('../MongoDb/models/userModels/Category');
+const Transaction = require('../MongoDb/models/userModels/Transaction');
+const Party = require('../MongoDb/models/userModels/Party');
+const Loan = require('../MongoDb/models/userModels/Loan');
+const LoanRe = require('../MongoDb/models/userModels/LoanRe');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 
@@ -17,18 +23,65 @@ const generateBusinessCode = () => {
 
 exports.signup = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const {
+      name,
+      email,
+      password,
+      businessName,
+      companyType,
+      gstNumber,
+      teamAccessCount,
+      teamMembers
+    } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({ error: 'Name, email, and password are required' });
+      return res.status(400).json({ error: 'Account creator name, email, and password are required' });
+    }
+
+    const trimmedBusinessName = (businessName || (name ? `${name.trim()}'s Company` : '')).trim();
+    if (!trimmedBusinessName) {
+      return res.status(400).json({ error: 'Company / Business name is required' });
+    }
+
+    const trimmedCompanyType = (companyType || '').trim();
+    if (!trimmedCompanyType) {
+      return res.status(400).json({ error: 'Company type (e.g. Pvt Ltd, LLP, LLC) is required' });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedName = name.trim();
+    const trimmedGst = (gstNumber || '').trim().toUpperCase();
 
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({ error: 'Email already registered' });
+    }
+
+    // Process and validate team members (maximum 3 users excluding creator)
+    let processedTeamMembers = [];
+    if (Array.isArray(teamMembers)) {
+      processedTeamMembers = teamMembers
+        .map(em => (typeof em === 'string' ? em : em?.email || '').trim().toLowerCase())
+        .filter(Boolean);
+    }
+
+    if (processedTeamMembers.length > 3) {
+      return res.status(400).json({ error: 'Maximum 3 user access can be given, excluding the account creator' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const seenEmails = new Set();
+    for (const memberEmail of processedTeamMembers) {
+      if (!emailRegex.test(memberEmail)) {
+        return res.status(400).json({ error: `Invalid team member Gmail/email: ${memberEmail}` });
+      }
+      if (memberEmail === normalizedEmail) {
+        return res.status(400).json({ error: 'Team member Gmail cannot be the same as the account creator email' });
+      }
+      if (seenEmails.has(memberEmail)) {
+        return res.status(400).json({ error: `Duplicate team member email entered: ${memberEmail}` });
+      }
+      seenEmails.add(memberEmail);
     }
 
     const user = new User({ name: normalizedName, email: normalizedEmail, password });
@@ -36,18 +89,55 @@ exports.signup = async (req, res) => {
 
     const business = await Business.create({
       businessId: generateBusinessCode(),
-      name: `${user.name}'s Business`,
+      name: trimmedBusinessName,
+      companyType: trimmedCompanyType,
+      gstNumber: trimmedGst,
+      teamAccessCount: processedTeamMembers.length || Math.min(Number(teamAccessCount) || 0, 3),
+      teamMembers: processedTeamMembers.map(mEmail => ({ email: mEmail, role: 'Member', addedAt: new Date() })),
       owner: user._id,
+      userId: user._id,
       currency: 'INR'
     });
+
+    // Seed default payment modes
+    try {
+      const defaultPaymentModes = ['Cash', 'Online', 'UPI', 'Bank Transfer', 'Card'];
+      await PaymentMode.insertMany(
+        defaultPaymentModes.map(mode => ({
+          businessId: business._id,
+          paymentMode: mode
+        })),
+        { ordered: false }
+      );
+    } catch (_) {}
+
+    // Seed default categories
+    try {
+      const defaultCategories = ['Sales', 'Purchase', 'Rent', 'Utilities', 'Salary', 'Marketing', 'Office Supplies', 'Others'];
+      await Category.insertMany(
+        defaultCategories.map(cat => ({
+          businessId: business._id,
+          category: cat
+        })),
+        { ordered: false }
+      );
+    } catch (_) {}
 
     user.businesses.push(business._id);
     await user.save();
 
+    // Link business to any already registered team members
+    if (processedTeamMembers.length > 0) {
+      await User.updateMany(
+        { email: { $in: processedTeamMembers } },
+        { $addToSet: { businesses: business._id } }
+      );
+    }
+
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
 
     res.status(201).json({
-      message: 'User created successfully',
+      message: 'Company onboarded successfully',
       token,
       user: {
         id: user._id,
@@ -153,6 +243,25 @@ exports.login = async (req, res) => {
       }
     }
 
+    // Merge any businesses where the user was invited as a team member
+    try {
+      const invitedBizs = await Business.find({ 'teamMembers.email': user.email });
+      if (invitedBizs && invitedBizs.length > 0) {
+        const existingIds = new Set((user.businesses || []).map(b => (b._id || b).toString()));
+        let needsSave = false;
+        for (const ib of invitedBizs) {
+          if (!existingIds.has(ib._id.toString())) {
+            user.businesses.push(ib._id);
+            needsSave = true;
+          }
+        }
+        if (needsSave) {
+          await user.save();
+          user = await User.findById(user._id).populate('businesses');
+        }
+      }
+    } catch (_) {}
+
     let businessId = matchedBusiness ? matchedBusiness._id : user.businesses?.[0]?._id;
     let businesses = user.businesses || [];
     if (!businessId) {
@@ -220,6 +329,27 @@ exports.verifyToken = async (req, res) => {
 
     let businessId = user.businesses?.[0]?._id;
     let businesses = user.businesses || [];
+
+    // Ensure businesses where user is invited are also included
+    try {
+      if (user.email) {
+        const invitedBizs = await Business.find({ 'teamMembers.email': user.email });
+        if (invitedBizs && invitedBizs.length > 0) {
+          const currentIds = new Set(businesses.map(b => (b._id || b).toString()));
+          for (const ib of invitedBizs) {
+            if (!currentIds.has(ib._id.toString())) {
+              businesses.push(ib);
+              currentIds.add(ib._id.toString());
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    if (!businessId && businesses.length > 0) {
+      businessId = businesses[0]._id;
+    }
+
     if (!businessId) {
       const defaultBiz = await Business.create({
         businessId: generateBusinessCode(),
@@ -253,5 +383,52 @@ exports.verifyToken = async (req, res) => {
         businesses: []
       }
     });
+  }
+};
+
+exports.deleteAccount = async (req, res) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Find all businesses owned by this user
+    const ownedBusinesses = await Business.find({
+      $or: [{ owner: user._id }, { userId: user._id }]
+    });
+
+    const ownedBizIds = ownedBusinesses.map(b => b._id);
+
+    if (ownedBizIds.length > 0) {
+      await Transaction.deleteMany({ businessId: { $in: ownedBizIds } });
+      await Category.deleteMany({ businessId: { $in: ownedBizIds } });
+      await PaymentMode.deleteMany({ businessId: { $in: ownedBizIds } });
+      await Party.deleteMany({ businessId: { $in: ownedBizIds } });
+      await Loan.deleteMany({ businessId: { $in: ownedBizIds } });
+      await LoanRe.deleteMany({ businessId: { $in: ownedBizIds } });
+      await Business.deleteMany({ _id: { $in: ownedBizIds } });
+    }
+
+    // Remove user email from any other businesses teamMembers
+    if (user.email) {
+      await Business.updateMany(
+        { 'teamMembers.email': user.email },
+        { $pull: { teamMembers: { email: user.email } } }
+      );
+    }
+
+    // Delete user record
+    await User.findByIdAndDelete(userId);
+
+    res.status(200).json({ message: 'Account and all associated business data deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    res.status(500).json({ error: 'Failed to delete account', details: error.message });
   }
 };

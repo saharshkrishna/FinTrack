@@ -1,5 +1,8 @@
 const mongoose = require("mongoose");
 const Transaction = require("../MongoDb/models/userModels/Transaction");
+const Category = require("../MongoDb/models/userModels/Category");
+const PaymentMode = require("../MongoDb/models/userModels/Payment");
+const Party = require("../MongoDb/models/userModels/Party");
 
 // Transaction APIs
 exports.createTransaction = async (req, res) => {
@@ -29,6 +32,43 @@ exports.createTransaction = async (req, res) => {
       files,
     });
     const savedTransaction = await newTransaction.save();
+
+    // Auto-upsert new category, party, and payment mode if provided
+    try {
+      if (category && String(category).trim()) {
+        const catName = String(category).trim();
+        const exists = await Category.findOne({
+          businessId: req.businessId,
+          category: { $regex: new RegExp(`^${catName}$`, 'i') }
+        });
+        if (!exists) {
+          await Category.create({ businessId: req.businessId, category: catName });
+        }
+      }
+      if (partyName && String(partyName).trim()) {
+        const pName = String(partyName).trim();
+        const exists = await Party.findOne({
+          businessId: req.businessId,
+          partyName: { $regex: new RegExp(`^${pName}$`, 'i') }
+        });
+        if (!exists) {
+          await Party.create({ businessId: req.businessId, partyName: pName, partyType: "Supplier" });
+        }
+      }
+      if (paymentMode && String(paymentMode).trim()) {
+        const mName = String(paymentMode).trim();
+        const exists = await PaymentMode.findOne({
+          businessId: req.businessId,
+          paymentMode: { $regex: new RegExp(`^${mName}$`, 'i') }
+        });
+        if (!exists) {
+          await PaymentMode.create({ businessId: req.businessId, paymentMode: mName });
+        }
+      }
+    } catch (metaErr) {
+      console.warn("Error auto-adding metadata from transaction:", metaErr.message);
+    }
+
     res
       .status(201)
       .json({
@@ -76,6 +116,79 @@ exports.createBulkTransactions = async (req, res) => {
     }
 
     const savedTransactions = await Transaction.insertMany(validDocs);
+
+    // Auto-seed/insert any new categories, parties, and payment modes from imported transactions
+    try {
+      // 1. Process categories
+      const incomingCategories = [
+        ...new Set(
+          validDocs
+            .map((d) => (d.category ? String(d.category).trim() : ""))
+            .filter(Boolean)
+        )
+      ];
+      if (incomingCategories.length > 0) {
+        const existingCats = await Category.find({ businessId: req.businessId });
+        const existingCatSet = new Set(existingCats.map((c) => (c.category || "").trim().toLowerCase()));
+        const newCatDocs = incomingCategories
+          .filter((cat) => !existingCatSet.has(cat.toLowerCase()))
+          .map((cat) => ({
+            businessId: req.businessId,
+            category: cat
+          }));
+        if (newCatDocs.length > 0) {
+          await Category.insertMany(newCatDocs, { ordered: false });
+        }
+      }
+
+      // 2. Process parties
+      const incomingParties = [
+        ...new Set(
+          validDocs
+            .map((d) => (d.partyName ? String(d.partyName).trim() : ""))
+            .filter(Boolean)
+        )
+      ];
+      if (incomingParties.length > 0) {
+        const existingParties = await Party.find({ businessId: req.businessId });
+        const existingPartySet = new Set(existingParties.map((p) => (p.partyName || "").trim().toLowerCase()));
+        const newPartyDocs = incomingParties
+          .filter((p) => !existingPartySet.has(p.toLowerCase()))
+          .map((p) => ({
+            businessId: req.businessId,
+            partyName: p,
+            partyType: "Supplier"
+          }));
+        if (newPartyDocs.length > 0) {
+          await Party.insertMany(newPartyDocs, { ordered: false });
+        }
+      }
+
+      // 3. Process payment modes
+      const incomingModes = [
+        ...new Set(
+          validDocs
+            .map((d) => (d.paymentMode ? String(d.paymentMode).trim() : ""))
+            .filter(Boolean)
+        )
+      ];
+      if (incomingModes.length > 0) {
+        const existingModes = await PaymentMode.find({ businessId: req.businessId });
+        const existingModeSet = new Set(existingModes.map((m) => (m.paymentMode || "").trim().toLowerCase()));
+        const newModeDocs = incomingModes
+          .filter((m) => !existingModeSet.has(m.toLowerCase()))
+          .map((m) => ({
+            businessId: req.businessId,
+            paymentMode: m
+          }));
+        if (newModeDocs.length > 0) {
+          await PaymentMode.insertMany(newModeDocs, { ordered: false });
+        }
+      }
+    } catch (metaErr) {
+      console.warn("Error auto-adding metadata from bulk import:", metaErr.message);
+    }
+
     res.status(201).json({
       message: `${savedTransactions.length} transactions imported successfully`,
       transactions: savedTransactions,

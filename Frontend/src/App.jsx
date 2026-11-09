@@ -13,6 +13,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Landing from "./pages/Landing";
 import FinancialOverview from "./pages/FinancialOverview";
+import BusinessSettings from "./pages/BusinessSettings";
 import Layout from "./Layout";
 import CashinModal from "./components/modal/CashinModal";
 import CashoutModal from "./components/modal/CashoutModal";
@@ -78,19 +79,32 @@ function App() {
                       />
                       <Route path="/financial-overview" element={<FinancialOverview />} />
                       <Route path="/overview" element={<FinancialOverview />} />
-                      <Route path="/filters" element={<Filters />} />
+                      <Route path="/settings" element={<BusinessSettings />} />
+                      <Route path="/business-settings" element={<BusinessSettings />} />
+                      <Route path="/filters" element={<Filters onFilterChange={() => {}} />} />
                       <Route
                         path="/search-and-actions"
-                        element={<SearchAndActions addEntry={addEntry} />}
+                        element={<SearchAndActions addEntry={addEntry} onSearch={() => {}} />}
                       />
                       <Route path="/summary" element={<Summary />} />
-                      <Route path="/pagination" element={<Pagination />} />
+                      <Route
+                        path="/pagination"
+                        element={
+                          <Pagination
+                            totalRows={0}
+                            rowsPerPage={25}
+                            currentPage={1}
+                            setCurrentPage={() => {}}
+                          />
+                        }
+                      />
                       <Route
                         path="/table"
                         element={
                           <Table
                             tableData={tableData}
                             updateEntry={updateEntry}
+                            onDeleteSelected={() => {}}
                           />
                         }
                       />
