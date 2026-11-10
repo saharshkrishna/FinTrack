@@ -1,9 +1,7 @@
 import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  TrendingUp, 
   ArrowUpRight, 
-  ArrowDownRight, 
   ArrowRight,
   ShieldCheck, 
   Layers, 
@@ -15,9 +13,7 @@ import {
   ArrowUp, 
   ArrowDown, 
   Clock,
-  ChevronRight,
-  Sparkles,
-  Zap
+  ChevronRight
 } from 'lucide-react';
 import { DataContext } from '../context/DataContext';
 import { AuthContext } from '../context/AuthContext';

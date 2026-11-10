@@ -16,6 +16,7 @@ import Signup from "./pages/Signup";
 import Landing from "./pages/Landing";
 import FinancialOverview from "./pages/FinancialOverview";
 import BusinessSettings from "./pages/BusinessSettings";
+import BillingPage from "./pages/BillingPage";
 import Layout from "./Layout";
 import CashinModal from "./components/modal/CashinModal";
 import CashoutModal from "./components/modal/CashoutModal";
@@ -83,6 +84,7 @@ function App() {
                           />
                           <Route path="/financial-overview" element={<FinancialOverview />} />
                           <Route path="/overview" element={<FinancialOverview />} />
+                          <Route path="/billing" element={<BillingPage />} />
                           <Route path="/settings" element={<BusinessSettings />} />
                           <Route path="/business-settings" element={<BusinessSettings />} />
                           <Route path="/filters" element={<Filters onFilterChange={() => {}} />} />

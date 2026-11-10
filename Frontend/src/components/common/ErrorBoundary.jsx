@@ -72,7 +72,7 @@ class ErrorBoundary extends Component {
             </div>
 
             {/* Collapsible Error Debug Details */}
-            {process.env.NODE_ENV !== 'production' && this.state.error && (
+            {import.meta.env?.DEV && this.state.error && (
               <div className="text-left mt-4 border-t border-slate-100 pt-4">
                 <button
                   type="button"

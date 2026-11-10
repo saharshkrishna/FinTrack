@@ -4,7 +4,6 @@ import { FiWifiOff, FiRefreshCw, FiAlertTriangle } from 'react-icons/fi';
 const NetworkStatusBar = () => {
   const { 
     isOnline, 
-    isServerReachable, 
     hasNetworkError, 
     isReconnecting, 
     retryCountdown, 

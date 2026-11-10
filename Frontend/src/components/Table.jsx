@@ -1,6 +1,6 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { FiTrash2, FiFileText, FiPaperclip, FiCheckSquare, FiSquare } from "react-icons/fi";
+import { FiTrash2, FiFileText } from "react-icons/fi";
 import EntryDetails from "./modal/EntryDetails";
 import LoanEntryModal from "./modal/LoanEntryDetails";
 import Pagination from "./Pagination";

@@ -1,11 +1,39 @@
-import { useState,useContext } from "react";
+import { useState, useContext } from "react";
 import PropTypes from "prop-types";
+import { 
+  FiX, 
+  FiPlus, 
+  FiArrowUpRight, 
+  FiCalendar, 
+  FiUser, 
+  FiTag, 
+  FiCreditCard, 
+  FiPaperclip, 
+  FiTrash2, 
+  FiCheck,
+  FiAlertCircle 
+} from "react-icons/fi";
 import { DataContext } from "../../context/DataContext";
-import { FiX, FiPlus } from "react-icons/fi";
 import AddingModal from "./AddingModal";
 import PartyNameModal from "./PartyModal";
 
-const CreditModal = ({ onClose, type, onSubmit, initialData }) => {
+// Safe expression evaluator without using direct eval
+const evaluateExpression = (expr) => {
+  if (!expr || typeof expr !== "string") return null;
+  const sanitized = expr.replace(/[^0-9+\-*/().\s]/g, "");
+  if (!sanitized.trim()) return null;
+  try {
+    const result = new Function(`return (${sanitized})`)();
+    if (typeof result === "number" && !isNaN(result) && isFinite(result)) {
+      return result;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+};
+
+const CreditModal = ({ onClose, type = "Credit", onSubmit, initialData }) => {
   const [formData, setFormData] = useState({
     date: initialData?.date || new Date().toISOString().split("T")[0],
     amount: initialData?.amount || "",
@@ -13,139 +41,88 @@ const CreditModal = ({ onClose, type, onSubmit, initialData }) => {
     remarks: initialData?.remarks || "",
     category: initialData?.category || "",
     type: initialData?.type || type,
-    
+    paymentMode: initialData?.paymentMode || "Credit",
   });
 
-  const [inputValue, setInputValue] = useState(initialData?.amount || "");
-  const [calculatedValue, setCalculatedValue] = useState(initialData?.amount || "");
+  const [inputValue, setInputValue] = useState(
+    initialData?.amount !== undefined ? String(initialData.amount) : ""
+  );
+  const [calculatedValue, setCalculatedValue] = useState(
+    initialData?.amount !== undefined ? initialData.amount : ""
+  );
   const [error, setError] = useState("");
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
   const [isAddingModalOpen, setIsAddingModalOpen] = useState(false);
   const [entryType, setEntryType] = useState("");
-  const { parties, categories, loading, } = useContext(DataContext);
+  const { parties, categories, loading } = useContext(DataContext);
   const [files, setFiles] = useState([]);
 
-   if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
+  if (loading) return null;
+
+  const handleAmountChange = (e) => {
+    const value = e.target.value;
+    const validInputRegex = /^[0-9+\-*/().\s]*$/;
+
+    if (!validInputRegex.test(value)) {
+      return;
+    }
+
+    setInputValue(value);
+    setError("");
+
+    if (/[+\-*/]$/.test(value)) {
+      setCalculatedValue("");
+      setFormData((prev) => ({ ...prev, amount: value }));
+      return;
+    }
+
+    const result = evaluateExpression(value);
+    if (result !== null) {
+      setCalculatedValue(result);
+      setFormData((prev) => ({ ...prev, amount: result }));
+    } else {
+      setCalculatedValue("");
+      setFormData((prev) => ({ ...prev, amount: value }));
+    }
+  };
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
-  
-    // Append new files while avoiding duplicates
     setFiles((prevFiles) => {
-      const existingNames = prevFiles.map((file) => file.name);
-      const filteredFiles = selectedFiles.filter((file) => !existingNames.includes(file.name));
-      return [...prevFiles, ...filteredFiles];
+      const existingNames = prevFiles.map((f) => f.name);
+      const filtered = selectedFiles.filter((f) => !existingNames.includes(f.name));
+      return [...prevFiles, ...filtered];
     });
   };
 
   const handleRemoveFile = (index) => {
-    setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
+    setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Handle amount input change
-  const handleAmountChange = (e) => {
-    const value = e.target.value;
-  
-    // Allow only numbers, arithmetic operators, and decimal points
-    const validInputRegex = /^[0-9+\-*/().\s]*$/;
-  
-    if (!validInputRegex.test(value)) {
-      return; // Reject invalid characters
-    }
-  
-    setInputValue(value); // Always update input value
-    setError(""); // Clear any previous errors
-  
-    // Prevent errors for incomplete expressions (e.g., "100+")
-    if (/[+\-*/]$/.test(value)) {
-      setCalculatedValue(""); // Clear calculated value until valid
-      setFormData((prev) => ({
-        ...prev,
-        amount: value, // Keep raw input
-      }));
-      return;
-    }
-  
-    try {
-      const result = eval(value);
-      if (!isNaN(result)) {
-        setCalculatedValue(result);
-        setFormData((prev) => ({
-          ...prev,
-          amount: result,
-        }));
-      }
-    } catch {
-      setCalculatedValue(""); // Do not set "Invalid Expression" yet
-      setFormData((prev) => ({
-        ...prev,
-        amount: value, // Store the raw expression
-      }));
-    }
-    console.log("Input Value:", value);
-  };
-
-  // Handle form submission
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-  
-    if (inputValue.startsWith("0") && inputValue.length > 1) {
+
+    if (inputValue.startsWith("0") && inputValue.length > 1 && !inputValue.startsWith("0.")) {
       setError("Amount cannot start with zero.");
       return;
     }
-  
-    const updatedEntry = {
-      id: initialData?._id || Date.now(),
-      ...formData,
-    };
-  
-    // If no files are selected, just submit the form data without files
-    if (files.length === 0) {
-      console.log("Submitting entry without files:", updatedEntry);
-      onSubmit(updatedEntry);
-      onClose();
+
+    const finalAmount = calculatedValue !== "" ? calculatedValue : evaluateExpression(inputValue) || Number(inputValue);
+    if (isNaN(finalAmount) || finalAmount <= 0) {
+      setError("Please enter a valid amount greater than zero.");
       return;
     }
-  
-    // If files exist, submit them to the backend
-    const formDataWithFiles = new FormData();
-    formDataWithFiles.append("date", formData.date);
-    formDataWithFiles.append("amount", formData.amount);
-    formDataWithFiles.append("partyName", formData.partyName);
-    formDataWithFiles.append("remarks", formData.remarks);
-    formDataWithFiles.append("category", formData.category);
-    formDataWithFiles.append("type", formData.type);
-  
-    files.forEach((file) => {
-      formDataWithFiles.append("file", file);
-    });
-  
-    try {
-      const response = await fetch("http://localhost:5000/api/user/uploads", {
-        method: "POST",
-        body: formDataWithFiles,
-      });
-  
-      const data = await response.json();
-  
-      if (!response.ok) {
-        throw new Error(data.message || "File upload failed.");
-      }
-  
-      console.log("File upload response:", data);
-  
-      onSubmit({
-        id: updatedEntry.id,
-        ...formData,
-        files: data.file ? data.file.map((file) => file) : [],
-      });
-  
-      setFiles([]);
-    } catch (error) {
-      console.error("Error uploading files:", error);
+
+    const entry = {
+      id: initialData?._id || initialData?.id || Date.now(),
+      ...formData,
+      amount: finalAmount,
+      files: files.map((file) => file.name),
+    };
+
+    if (onSubmit) {
+      onSubmit(entry);
     }
-  
     onClose();
   };
 
@@ -153,230 +130,294 @@ const CreditModal = ({ onClose, type, onSubmit, initialData }) => {
     setFormData((prev) => ({ ...prev, partyName: newParty }));
   };
 
-  const handleOpenModal = (type) => {
-    setEntryType(type); // Set entry type dynamically
+  const handleOpenModal = (t) => {
+    setEntryType(t);
     setIsAddingModalOpen(true);
   };
-  
-  const handleAddSuccess = (newEntry) => {
-    if (entryType === "category") {
-      setFormData((prev) => ({ ...prev, category: newEntry }));
-    }
-  };
 
+  const handleAddSuccess = (newCategory) => {
+    setFormData((prev) => ({ ...prev, category: newCategory }));
+  };
 
   return (
     <div
-  className="fixed inset-0 bg-black bg-opacity-50 flex justify-end z-40"
-  onClick={onClose} // Close modal when clicking outside
->
-  <div
-    className="bg-white p-4 sm:p-6 rounded-lg w-full sm:w-11/12 md:w-3/4 lg:w-1/2 max-h-screen overflow-y-auto"
-    onClick={(e) => e.stopPropagation()} // Prevent clicks inside the modal from closing it
-  >
-        <div className="sticky top-0 bg-white z-10 p-6 border-b">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">
-              Credit
-            </h2>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-              <FiX className="w-6 h-6" />
-            </button>
+      className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fade-in"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl border border-slate-200/90 w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden text-slate-800"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200/60 text-blue-600 flex items-center justify-center shadow-2xs">
+              <FiArrowUpRight className="text-xl" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900 leading-tight">
+                  {initialData ? "Edit Credit Entry" : "Record Credit"}
+                </h2>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                  Receivable
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">
+                Record credit given or receivable amount due from a customer
+              </p>
+            </div>
           </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            aria-label="Close"
+          >
+            <FiX className="text-lg" />
+          </button>
         </div>
 
-        <div className="overflow-y-auto h-[calc(100vh-80px)] p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Scrollable Form Body */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar text-xs">
+          {error && (
+            <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-xl border border-rose-200 flex items-center gap-2">
+              <FiAlertCircle className="shrink-0 text-sm" />
+              <span>{error}</span>
+            </div>
+          )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Date <span className="text-red-500">*</span>
-                </label>
+          {/* Date & Amount Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Date <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
+                <FiCalendar className="absolute left-3 top-2.5 text-slate-400 text-sm" />
                 <input
                   type="date"
+                  required
                   value={formData.date}
                   onChange={(e) => setFormData((prev) => ({ ...prev, date: e.target.value }))}
-                  className="w-3/4 p-2 border rounded-lg"
-                  required
+                  className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-xl text-xs md:text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Amount <span className="text-red-500">*</span>
-              </label>
-              <div className="flex gap-2">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Credit Amount (₹) <span className="text-rose-500">*</span>
+                </label>
+                {calculatedValue !== "" && String(calculatedValue) !== inputValue && (
+                  <span className="text-[11px] font-mono font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                    = ₹{Number(calculatedValue).toLocaleString("en-IN")}
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <span className="absolute left-3 top-2.5 text-slate-400 text-sm font-semibold">₹</span>
                 <input
                   type="text"
-                  placeholder="eg. 890 or 100 + 200*3"
+                  required
+                  placeholder="e.g. 12000 or 8000 + 4000"
                   value={inputValue}
                   onChange={handleAmountChange}
-                  className="w-1/2 p-2 border rounded-lg"
-                  required
+                  className="w-full pl-8 pr-3 py-2 font-mono border border-slate-300 rounded-xl text-xs md:text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all font-semibold text-slate-900"
                 />
               </div>
-              {error && <div className="mt-1 text-sm text-red-500">{error}</div>}
-              {calculatedValue && (
-                <div className="mt-1 text-md text-black-500">Calculated Amount: {calculatedValue}</div>
-              )}
             </div>
+          </div>
 
-            <div className="grid grid-cols-3 gap-4">
-  {/* Party Name Selection */}
-  <div>
-    <label className="block text-sm font-medium text-gray-700">Party Name (Contact)</label>
-    <div className="flex gap-2">
-    <select
-                  value={formData.partyName}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, partyName: e.target.value }))}
-                  className="w-full p-2 border rounded-lg"
-                >
-                  <option value="">Select</option>
-                  {parties?.map((party, index) => (
-          <option key={index} value={party.partyName}>
-            {party.partyName}
-                    </option>
-                  ))}
+          {/* Party Name Row */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700">
+                Debtor / Customer Name <span className="text-rose-500">*</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsPartyModalOpen(true)}
+                className="text-[11px] text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                <FiPlus className="text-xs" />
+                <span>New Contact</span>
+              </button>
+            </div>
+            <div className="relative">
+              <FiUser className="absolute left-3 top-2.5 text-slate-400 text-sm" />
+              <select
+                required
+                value={formData.partyName}
+                onChange={(e) => setFormData((prev) => ({ ...prev, partyName: e.target.value }))}
+                className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-xl text-xs md:text-sm bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all"
+              >
+                <option value="">Select debtor / party contact</option>
+                {parties?.map((party, index) => (
+                  <option key={party._id || index} value={party.partyName}>
+                    {party.partyName} {party.partyType ? `(${party.partyType})` : ""}
+                  </option>
+                ))}
               </select>
-      <button
-        type="button"
-        onClick={() => setIsPartyModalOpen(true)}
-        className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-      >
-        <FiPlus />
-      </button>
-    </div>
-  </div>
+            </div>
+          </div>
 
-  {/* Category Selection */}
-  <div>
-    <label className="block text-sm font-medium text-gray-700">Category</label>
-    <div className="flex gap-2">
-    <select
-                  value={formData.category}
-                  placeholder="Add category"
-                  onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-                  className="w-full p-2 border rounded-lg"
+          {/* Category & Payment Mode 2-col */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Category
+                </label>
+                <button
+                  type="button"
+                  onClick={() => handleOpenModal("category")}
+                  className="text-[11px] text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 transition-colors cursor-pointer"
                 >
-                  <option value="">Select</option>
-                  {categories?.map((categoryObj) => (
-          <option key={categoryObj._id} value={categoryObj.category}>
-            {categoryObj.category}
+                  <FiPlus className="text-xs" />
+                  <span>New Category</span>
+                </button>
+              </div>
+              <div className="relative">
+                <FiTag className="absolute left-3 top-2.5 text-slate-400 text-sm" />
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
+                  className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-xl text-xs md:text-sm bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all"
+                >
+                  <option value="">Select category (optional)</option>
+                  {categories?.map((c) => (
+                    <option key={c._id} value={c.category}>
+                      {c.category}
                     </option>
                   ))}
                 </select>
-                <button
-        type="button"
-        onClick={() => handleOpenModal("category")}
-        
-        className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-      >
-        <FiPlus />
-      </button>
-    </div>
-  </div>
-  </div>
-
-  <div>
-              <label className="block text-sm font-small text-gray-700">Remarks</label>
-              <textarea
-                type="text"
-                placeholder="e.g. Enter Details (Name, Bill No, Item Name, Quantity etc)"
-                value={formData.remarks}
-                onChange={(e) => setFormData((prev) => ({ ...prev, remarks: e.target.value }))}
-                className="w-3/4 h-[100px] p-2 border rounded-lg"
-              />
+              </div>
             </div>
 
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Payment Channel
+              </label>
+              <div className="relative">
+                <FiCreditCard className="absolute left-3 top-2.5 text-slate-400 text-sm" />
+                <input
+                  type="text"
+                  readOnly
+                  value="Credit (Receivable)"
+                  className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-xs md:text-sm bg-slate-50 text-slate-600"
+                />
+              </div>
+            </div>
+          </div>
 
+          {/* Remarks */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Remarks / Terms Description <span className="text-slate-400 font-normal">(Optional)</span>
+            </label>
+            <textarea
+              rows="2"
+              placeholder="e.g. Sales on 30 days credit, goods dispatched, partial balance remaining"
+              value={formData.remarks}
+              onChange={(e) => setFormData((prev) => ({ ...prev, remarks: e.target.value }))}
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs md:text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all"
+            />
+          </div>
 
-{/* File Upload & Save Button in One Row */}
-<div className="flex justify-between items-center mt-4">
-  
-  {/* Attach Bills Section - Aligned Left */}
-  <div className="flex items-center gap-3">
-    <input
-      type="file"
-      id="fileInput"
-      style={{ display: "none" }}
-      onChange={handleFileChange}
-      multiple
-    />
+          {/* File Attachments */}
+          <div className="pt-1">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-semibold text-slate-700">
+                Attached Invoices & Documents
+              </label>
+              <input
+                type="file"
+                id="creditFileInput"
+                className="hidden"
+                onChange={handleFileChange}
+                multiple
+              />
+              <button
+                type="button"
+                onClick={() => document.getElementById("creditFileInput")?.click()}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+              >
+                <FiPaperclip className="text-xs" />
+                <span>Attach Files</span>
+              </button>
+            </div>
 
-    <button
-      type="button"
-      className="px-4 py-2 bg-blue-500 text-white rounded-lg shrink-0"
-      onClick={() => document.getElementById("fileInput").click()}
-    >
-      📎 Attach Bills
-    </button>
+            {files.length > 0 ? (
+              <div className="flex flex-wrap gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                {files.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-xs shadow-2xs"
+                  >
+                    <span className="truncate max-w-[160px] text-slate-700">{file.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile(index)}
+                      className="text-slate-400 hover:text-rose-500 transition-colors"
+                      title="Remove file"
+                    >
+                      <FiTrash2 className="text-xs" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-[11px] text-slate-400 italic">
+                No attachments added. Supports delivery challans, bills, agreements.
+              </div>
+            )}
+          </div>
 
-    {/* Show Number of Files Instead of Expanding Button */}
-    {files.length > 0 && (
-      <span className="text-sm text-gray-500 whitespace-nowrap">
-        ({files.length} files selected)
-      </span>
-    )}
-  </div>
-
-  {/* Save Button - Aligned Right */}
-  <div>
-    <button
-      type="submit"
-      className="px-4 py-2 bg-green-600 text-white rounded-lg"
-    >
-      Save
-    </button>
-  </div>
-</div>
-
-{/* File List (Fixed Height to Prevent Button Movement) */}
-<div className="mt-2 min-h-[40px]">
-  {files.length > 0 && (
-    <div className="flex flex-wrap gap-2">
-      {files.map((file, index) => (
-        <div key={index} className="flex items-center gap-2 bg-gray-100 p-2 rounded-lg">
-          <span className="text-sm text-gray-700 truncate max-w-[150px]">{file.name}</span>
-          <button
-            onClick={() => handleRemoveFile(index)}
-            className="text-sm text-red-500 hover:underline"
-          >
-            ❌
-          </button>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
-          </form>
-        </div>
+          {/* Footer inside form */}
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer"
+            >
+              <FiCheck className="text-sm" />
+              <span>{initialData ? "Update Credit" : "Save Credit"}</span>
+            </button>
+          </div>
+        </form>
       </div>
 
-       {isPartyModalOpen && (
-               <PartyNameModal
-               onAddParty={handleAddParty}  // ✅ Pass function as a prop
-               onClose={() => setIsPartyModalOpen(false)}
-             />
-            )}
-      
+      {/* Sub-modals */}
+      {isPartyModalOpen && (
+        <PartyNameModal
+          onClose={() => setIsPartyModalOpen(false)}
+          onAddParty={handleAddParty}
+        />
+      )}
+
       {isAddingModalOpen && (
-            <AddingModal
-              entryType={entryType} // ✅ Pass dynamically selected type
-              onClose={() => setIsAddingModalOpen(false)}
-              onSuccess={handleAddSuccess} // ✅ Handles both cases
-            />
-          )}
+        <AddingModal
+          entryType={entryType}
+          onClose={() => setIsAddingModalOpen(false)}
+          onSuccess={handleAddSuccess}
+        />
+      )}
     </div>
   );
 };
 
 CreditModal.propTypes = {
   onClose: PropTypes.func.isRequired,
-  type: PropTypes.oneOf(["Credit", "Debit"]).isRequired,
-  initialData: PropTypes.object,
+  type: PropTypes.string,
   onSubmit: PropTypes.func.isRequired,
+  initialData: PropTypes.object,
 };
 
 export default CreditModal;

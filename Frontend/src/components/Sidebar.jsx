@@ -13,7 +13,8 @@ import {
   FiBriefcase,
   FiLayers,
   FiHome,
-  FiSettings
+  FiSettings,
+  FiFileText
 } from 'react-icons/fi';
 import { useSidebar } from '../context/SidebarContext';
 import { AuthContext } from '../context/AuthContext';
@@ -52,6 +53,7 @@ const Sidebar = () => {
     if (path === '/' && (location.pathname === '/' || location.pathname === '/landing')) return true;
     if (path === '/expense-book' && location.pathname === '/expense-book') return true;
     if (path === '/financial-overview' && (location.pathname === '/financial-overview' || location.pathname === '/overview')) return true;
+    if (path === '/billing' && location.pathname === '/billing') return true;
     if ((path === '/settings' || path === '/business-settings') && (location.pathname === '/settings' || location.pathname === '/business-settings')) return true;
     return location.pathname === path;
   };
@@ -259,6 +261,19 @@ const Sidebar = () => {
             >
               <FiPieChart className={`text-sm shrink-0 ${isCurrentPage('/financial-overview') ? 'text-blue-600' : 'text-slate-400'}`} />
               <span>Financial Overview</span>
+            </button>
+
+            {/* Billing & Tax Invoices Button */}
+            <button
+              onClick={() => navigate('/billing')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                isCurrentPage('/billing')
+                  ? 'bg-blue-50 text-blue-700 font-semibold'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'
+              }`}
+            >
+              <FiFileText className={`text-sm shrink-0 ${isCurrentPage('/billing') ? 'text-blue-600' : 'text-slate-400'}`} />
+              <span>Billing & Invoices</span>
             </button>
 
             {/* Business Settings Link */}

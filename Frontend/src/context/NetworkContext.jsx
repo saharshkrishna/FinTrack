@@ -26,7 +26,6 @@ export const NetworkProvider = ({ children }) => {
   const [retryCountdown, setRetryCountdown] = useState(0);
 
   const isReconnectingRef = useRef(false);
-  const autoRetryTimerRef = useRef(null);
   const countdownTimerRef = useRef(null);
 
   // Increment / Decrement active HTTP requests for the top loader
@@ -39,7 +38,7 @@ export const NetworkProvider = ({ children }) => {
   }, []);
 
   // Report a network / server connectivity failure
-  const reportNetworkError = useCallback((errorMsg = 'Network connection failed') => {
+  const reportNetworkError = useCallback(() => {
     setIsServerReachable(false);
     setLastErrorTime(Date.now());
   }, []);
@@ -77,7 +76,7 @@ export const NetworkProvider = ({ children }) => {
         window.dispatchEvent(new CustomEvent('fintrack:network-restored'));
         return true;
       }
-    } catch (err) {
+    } catch {
       setIsServerReachable(false);
       if (!silent) {
         toast.error('Server still unreachable. Retrying shortly...', {

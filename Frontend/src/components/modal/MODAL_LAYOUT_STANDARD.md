@@ -1,227 +1,100 @@
-# Modal Layout Standard for FinTrack
+# FinTrack Modern Modal Design System & Layout Standard
 
-## Reference: CashinModal.jsx
+All modals across FinTrack follow this cohesive, modern design system.
 
-All modals (CashinModal, CashoutModal, DebitModal, CreditModal) should follow this standardized layout structure:
+---
 
-## Structure Overview
+## 1. Core Architecture
 
-### 1. Modal Container
+### Backdrop & Container
 ```jsx
 <div
-  className="fixed inset-0 bg-black bg-opacity-50 flex justify-end z-40"
+  className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fade-in"
   onClick={onClose}
 >
+  <div
+    className="bg-white rounded-2xl shadow-2xl border border-slate-200/90 w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden text-slate-800"
+    onClick={(e) => e.stopPropagation()}
+  >
 ```
 
-### 2. Modal Content Container
+### Header Bar (Sticky Top)
 ```jsx
-<div
-  className="bg-white p-6 rounded-lg w-1/2"
-  onClick={(e) => e.stopPropagation()}
->
-```
-
-### 3. Sticky Header Section
-```jsx
-<div className="sticky top-0 bg-white z-10 p-6 border-b">
-  <div className="flex justify-between items-center">
-    <h2 className="text-xl font-semibold">
-      {/* Modal Title */}
-    </h2>
-    <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-      <FiX className="w-6 h-6" />
-    </button>
-  </div>
-</div>
-```
-
-### 4. Scrollable Content Area
-```jsx
-<div className="overflow-y-auto h-[calc(100vh-80px)] p-6">
-  <form onSubmit={handleSubmit} className="space-y-4">
-```
-
-## Field Layout Standards
-
-### Date Field (Top)
-```jsx
-<div className="grid grid-cols-2 gap-4">
-  <div>
-    <label className="block text-sm font-small text-gray-700">
-      Date <span className="text-red-500">*</span>
-    </label>
-    <input
-      type="date"
-      value={formData.date}
-      onChange={(e) => setFormData((prev) => ({ ...prev, date: e.target.value }))}
-      className="w-3/4 p-2 border rounded-lg"
-      required
-    />
-  </div>
-</div>
-```
-
-### Amount Field
-```jsx
-<div>
-  <label className="block text-sm font-small text-gray-700">
-    Amount <span className="text-red-500">*</span>
-  </label>
-  <div className="flex gap-2">
-    <input
-      type="text"
-      placeholder="eg. 890 or 100 + 200*3"
-      value={inputValue}
-      onChange={handleAmountChange}
-      className="w-1/2 p-2 border rounded-lg"
-      required
-    />
-  </div>
-  {error && <div className="mt-1 text-sm text-red-500">{error}</div>}
-  {calculatedValue && (
-    <div className="mt-1 text-md text-black-500">Calculated Amount: {calculatedValue}</div>
-  )}
-</div>
-```
-
-### Three-Column Section (Party, Category, Payment Mode)
-```jsx
-<div className="grid grid-cols-3 gap-4">
-  <div>
-    <label className="block text-sm font-small text-gray-700">Party Name (Contact)</label>
-    <div className="flex gap-2">
-      <select
-        value={formData.partyName}
-        onChange={(e) => setFormData((prev) => ({ ...prev, partyName: e.target.value }))}
-        className="w-full p-2 border rounded-lg"
-      >
-        <option value="">Select</option>
-        {/* Options */}
-      </select>
-      <button
-        type="button"
-        onClick={() => setIsPartyModalOpen(true)}
-        className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-      >
-        <FiPlus />
-      </button>
-    </div>
-  </div>
-  {/* Repeat for Category and Payment Mode */}
-</div>
-```
-
-### Remarks Field
-```jsx
-<div>
-  <label className="block text-sm font-small text-gray-700">Remarks</label>
-  <textarea
-    type="text"
-    placeholder="e.g. Enter Details (Name, Bill No, Item Name, Quantity etc)"
-    value={formData.remarks}
-    onChange={(e) => setFormData((prev) => ({ ...prev, remarks: e.target.value }))}
-    className="w-3/4 h-[100px] p-2 border rounded-lg"
-  />
-</div>
-```
-
-### File Upload & Save Button Row
-```jsx
-<div className="flex justify-between items-center mt-4">
-  {/* Attach Bills Section - Aligned Left */}
+<div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
   <div className="flex items-center gap-3">
-    <input
-      type="file"
-      id="fileInput"
-      style={{ display: "none" }}
-      onChange={handleFileChange}
-      multiple
-    />
-    <button
-      type="button"
-      className="px-4 py-2 bg-blue-500 text-white rounded-lg shrink-0"
-      onClick={() => document.getElementById("fileInput").click()}
-    >
-      📎 Attach Bills
-    </button>
-    {files.length > 0 && (
-      <span className="text-sm text-gray-500 whitespace-nowrap">
-        ({files.length} files selected)
-      </span>
-    )}
-  </div>
-  {/* Save Button - Aligned Right */}
-  <div>
-    <button
-      type="submit"
-      className="px-4 py-2 bg-green-600 text-white rounded-lg"
-    >
-      Save
-    </button>
-  </div>
-</div>
-```
-
-### File List Display
-```jsx
-<div className="mt-2 min-h-[40px]">
-  {files.length > 0 && (
-    <div className="flex flex-wrap gap-2">
-      {files.map((file, index) => (
-        <div key={index} className="flex items-center gap-2 bg-gray-100 p-2 rounded-lg">
-          <span className="text-sm text-gray-700 truncate max-w-[150px]">{file.name}</span>
-          <button
-            onClick={() => handleRemoveFile(index)}
-            className="text-sm text-red-500 hover:underline"
-          >
-            ❌
-          </button>
-        </div>
-      ))}
+    {/* Themed Icon Badge */}
+    <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200/60 text-emerald-600 flex items-center justify-center shadow-2xs">
+      <FiArrowUpRight className="text-xl" />
     </div>
-  )}
+    <div>
+      <div className="flex items-center gap-2">
+        <h2 className="text-base font-bold text-slate-900 leading-tight">Modal Title</h2>
+        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+          Tag
+        </span>
+      </div>
+      <p className="text-xs text-slate-500">Subtitle description explaining action</p>
+    </div>
+  </div>
+  <button
+    onClick={onClose}
+    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+  >
+    <FiX className="text-lg" />
+  </button>
 </div>
 ```
 
-## Key Layout Principles
+---
 
-1. **Consistent Spacing**: Use `space-y-4` for form field spacing
-2. **Grid Layouts**: 
-   - `grid-cols-2` for Date field row
-   - `grid-cols-3` for Party/Category/Payment row
-3. **Input Widths**: 
-   - Date input: `w-3/4`
-   - Amount input: `w-1/2`
-   - Remarks textarea: `w-3/4`
-   - Dropdowns in grid: `w-full`
-4. **Button Alignment**:
-   - File upload button: Left
-   - Save button: Right
-   - Use `flex justify-between`
-5. **Labels**: `text-sm font-small text-gray-700`
-6. **Required Fields**: Add `<span className="text-red-500">*</span>`
+## 2. Color Themes by Transaction Type
 
-## Modal-Specific Adjustments
+| Modal | Theme | Icon Badge | Submit Button |
+|---|---|---|---|
+| **Cash In** | Emerald | `bg-emerald-50 text-emerald-600 border-emerald-200/60` | `bg-emerald-600 hover:bg-emerald-700` |
+| **Cash Out** | Rose | `bg-rose-50 text-rose-600 border-rose-200/60` | `bg-rose-600 hover:bg-rose-700` |
+| **Credit** | Blue | `bg-blue-50 text-blue-600 border-blue-200/60` | `bg-blue-600 hover:bg-blue-700` |
+| **Debit** | Amber | `bg-amber-50 text-amber-600 border-amber-200/60` | `bg-amber-600 hover:bg-amber-700` |
+| **Loan** | Indigo | `bg-indigo-50 text-indigo-600 border-indigo-200/60` | `bg-indigo-600 hover:bg-indigo-700` |
+| **Loan Repayment** | Purple | `bg-purple-50 text-purple-600 border-purple-200/60` | `bg-purple-600 hover:bg-purple-700` |
+| **Invoice / Billing** | Slate / Blue | `bg-blue-600 text-white shadow-xs` | `bg-blue-600 hover:bg-blue-700` |
 
-### DebitModal & CreditModal
-- Should have Party Name field (for loan tracking)
-- May have additional fields like loan-specific information
-- Keep same overall structure and field arrangement
+---
 
-### CashoutModal
-- Identical to CashinModal structure
-- Only difference is the modal title
+## 3. Form Input Standards
 
-## Implementation Checklist
+### Labels & Fields
+- Label: `block text-xs font-semibold text-slate-700 mb-1.5`
+- Required: `<span className="text-rose-500">*</span>`
+- Inputs & Selects:
+  ```jsx
+  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs md:text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none transition-all"
+  ```
+- Evaluated Amount Badge:
+  ```jsx
+  <span className="text-[11px] font-mono font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+    = ₹{Number(calculatedValue).toLocaleString("en-IN")}
+  </span>
+  ```
 
-- [ ] Modal container classes match
-- [ ] Sticky header with proper padding and border
-- [ ] Scrollable content area with correct height
-- [ ] Date field in 2-column grid at top
-- [ ] Amount field with calculator support
-- [ ] Three-column grid for Party/Category/Payment
-- [ ] Remarks textarea with correct width
-- [ ] File upload and Save button in horizontal flex layout
-- [ ] File list display with min-height
-- [ ] All spacing and padding consistent
+---
+
+## 4. Footer Actions
+```jsx
+<div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+  <button
+    type="button"
+    onClick={onClose}
+    className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+  >
+    Cancel
+  </button>
+  <button
+    type="submit"
+    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer"
+  >
+    <FiCheck className="text-sm" />
+    <span>Save Entry</span>
+  </button>
+</div>
+```
