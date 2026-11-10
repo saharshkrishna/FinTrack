@@ -25,6 +25,7 @@ export const NetworkProvider = ({ children }) => {
   const [lastErrorTime, setLastErrorTime] = useState(null);
   const [retryCountdown, setRetryCountdown] = useState(0);
 
+  const isReconnectingRef = useRef(false);
   const autoRetryTimerRef = useRef(null);
   const countdownTimerRef = useRef(null);
 
@@ -51,7 +52,8 @@ export const NetworkProvider = ({ children }) => {
 
   // Active probe to test server health
   const retryConnection = useCallback(async (silent = false) => {
-    if (isReconnecting) return;
+    if (isReconnectingRef.current) return;
+    isReconnectingRef.current = true;
     setIsReconnecting(true);
 
     try {
@@ -85,9 +87,10 @@ export const NetworkProvider = ({ children }) => {
       }
       return false;
     } finally {
+      isReconnectingRef.current = false;
       setIsReconnecting(false);
     }
-  }, [isReconnecting]);
+  }, []);
 
   // Window online/offline event listeners
   useEffect(() => {

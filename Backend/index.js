@@ -44,7 +44,12 @@ const MONGODB_URL = process.env.MONGODB_URL;
 //creating the server from express library
 const app = express();
 //encoding the url to make the data passed through it to a object 
-app.use(cors());
+app.use(cors({
+    origin: true,
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-business-id'],
+    exposedHeaders: ['x-business-id']
+}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 const businessMiddleware = require('./middleware/business');
@@ -93,8 +98,16 @@ process.on('uncaughtException', (err) => {
 //function to start the server with async/await and robust retry error handling
 const StartServer = async (MONGODB_URL) => {
     // Start listening immediately so health checks and loaders can probe connectivity
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
         console.log(`Server started successfully on port ${PORT}`);
+    });
+
+    server.on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+            console.error(`[Server Error] Port ${PORT} is already in use. Retrying or awaiting port release...`);
+        } else {
+            console.error('[Server Error]', err.message);
+        }
     });
 
     const connectWithRetry = async (attempt = 1) => {
