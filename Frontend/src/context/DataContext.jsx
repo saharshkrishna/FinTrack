@@ -123,18 +123,20 @@ export const DataProvider = ({ children }) => {
   const [paymentModes, setPaymentModes] = useState([]);
   const [loans, setLoans] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      const [partiesResponse, categoriesResponse, paymentModesResponse, loansResponse, transactionsResponse] = await Promise.all([
+      const [partiesResponse, categoriesResponse, paymentModesResponse, loansResponse, transactionsResponse, invoicesResponse] = await Promise.all([
         axios.get(`${API_BASE_URL}/parties`),
         axios.get(`${API_BASE_URL}/category`),
         axios.get(`${API_BASE_URL}/paymentMode`),
         axios.get(`${API_BASE_URL}/loans`),
-        axios.get(`${API_BASE_URL}/transactions`)
+        axios.get(`${API_BASE_URL}/transactions`),
+        axios.get(`${API_BASE_URL}/invoices`).catch(() => ({ data: { invoices: [] } }))
       ]);
       
       setParties(partiesResponse.data.parties || []);
@@ -142,6 +144,7 @@ export const DataProvider = ({ children }) => {
       setPaymentModes(paymentModesResponse.data.paymentMode || paymentModesResponse.data.paymentModes || []);
       setLoans(loansResponse.data.loans || []);
       setTransactions(transactionsResponse.data.transactions || []);
+      setInvoices(invoicesResponse.data.invoices || []);
       setError(null);
     } catch (err) {
       console.error("Error fetching shared data:", err);
@@ -447,6 +450,69 @@ export const DataProvider = ({ children }) => {
     }
   };
 
+  // ==================== Invoice APIs ====================
+  const fetchInvoices = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/invoices`);
+      setInvoices(response.data.invoices || []);
+    } catch (err) {
+      console.error("Error fetching invoices:", err);
+      toast.error("Failed to fetch invoices");
+    }
+  };
+
+  const createInvoice = async (invoiceData) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/invoices`, invoiceData);
+      const newInvoice = response.data.invoice;
+      setInvoices((prev) => [newInvoice, ...prev]);
+      toast.success("Invoice created successfully");
+      return newInvoice;
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+      toast.error(error.response?.data?.error || "Failed to create invoice");
+      throw error;
+    }
+  };
+
+  const updateInvoice = async (id, updatedData) => {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/invoices/${id}`, updatedData);
+      const updatedInvoice = response.data.invoice;
+      setInvoices((prev) =>
+        prev.map((inv) => (inv._id === id ? updatedInvoice : inv))
+      );
+      toast.success("Invoice updated successfully");
+      return updatedInvoice;
+    } catch (error) {
+      console.error("Error updating invoice:", error);
+      toast.error(error.response?.data?.error || "Failed to update invoice");
+      throw error;
+    }
+  };
+
+  const deleteInvoice = async (id) => {
+    try {
+      await axios.delete(`${API_BASE_URL}/invoices/${id}`);
+      setInvoices((prev) => prev.filter((inv) => inv._id !== id));
+      toast.success("Invoice deleted successfully");
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      toast.error("Failed to delete invoice");
+      throw error;
+    }
+  };
+
+  const getNextInvoiceNumber = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/invoices/next-number`);
+      return response.data.invoiceNumber;
+    } catch (error) {
+      console.error("Error fetching next invoice number:", error);
+      return `INV-${new Date().getFullYear()}/0001`;
+    }
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -456,9 +522,16 @@ export const DataProvider = ({ children }) => {
         paymentModes,
         loans,
         transactions,
+        invoices,
         loading,
         error,
         refreshData: fetchAllData,
+        // Invoice operations
+        fetchInvoices,
+        createInvoice,
+        updateInvoice,
+        deleteInvoice,
+        getNextInvoiceNumber,
         // Party operations
         fetchParties,
         createParty,

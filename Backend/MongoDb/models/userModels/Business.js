@@ -5,6 +5,13 @@ const BusinessSchema = new mongoose.Schema({
   name:            { type: String, required: true, trim: true },
   companyType:     { type: String, trim: true, default: '' },
   gstNumber:       { type: String, trim: true, uppercase: true, default: '' },
+  address:         { type: String, trim: true, default: '' },
+  state:           { type: String, trim: true, default: '' },
+  stateCode:       { type: String, trim: true, default: '' },
+  city:            { type: String, trim: true, default: '' },
+  pincode:         { type: String, trim: true, default: '' },
+  phone:           { type: String, trim: true, default: '' },
+  email:           { type: String, trim: true, default: '' },
   teamAccessCount: { type: Number, default: 0, min: 0, max: 3 },
   teamMembers: [
     {

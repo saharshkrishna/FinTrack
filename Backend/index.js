@@ -16,6 +16,7 @@ const categoryRoutes = require('./routes/category.routes');
 const authRoutes = require('./routes/auth.routes');
 const fileRoutes = require('./routes/file.routes');
 const businessRoutes = require('./routes/business.routes');
+const invoiceRoutes = require('./routes/invoice.routes');
 //compiling .env file
 dotenv.config();
 // Create uploads directory if it doesn't exist
@@ -66,6 +67,7 @@ app.use('/api/user/loanRe', businessMiddleware, loanReRoutes);
 app.use('/api/user/parties', businessMiddleware, partyRoutes);
 app.use('/api/user/paymentMode', businessMiddleware, paymentModeRoutes);
 app.use('/api/user/category', businessMiddleware, categoryRoutes);
+app.use('/api/user/invoices', businessMiddleware, invoiceRoutes);
 app.use('/api/user/uploads', fileRoutes);
 app.use('/api/business', businessRoutes);
 app.use('/api/user/business', businessRoutes);
