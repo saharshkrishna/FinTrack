@@ -127,6 +127,14 @@ exports.getInvoiceById = async (req, res) => {
   }
 };
 
+// Helper: Normalize invoice status
+const normalizeStatus = (status) => {
+  if (!status || typeof status !== 'string') return undefined;
+  const capitalized = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+  const valid = ['Draft', 'Sent', 'Paid', 'Cancelled'];
+  return valid.includes(capitalized) ? capitalized : undefined;
+};
+
 // POST create invoice
 exports.createInvoice = async (req, res) => {
   try {
@@ -134,6 +142,15 @@ exports.createInvoice = async (req, res) => {
 
     if (!items.length) {
       return res.status(400).json({ error: 'At least one line item is required' });
+    }
+
+    if (rest.status) {
+      const normalized = normalizeStatus(rest.status);
+      if (normalized) {
+        rest.status = normalized;
+      } else {
+        return res.status(400).json({ error: `Invalid status '${rest.status}'. Valid statuses are: Draft, Sent, Paid, Cancelled` });
+      }
     }
 
     // Auto-generate invoice number if not provided
@@ -194,6 +211,15 @@ exports.updateInvoice = async (req, res) => {
 
     const { items, isInterState, ...rest } = req.body;
     const interState = isInterState !== undefined ? isInterState : existing.isInterState;
+
+    if (rest.status) {
+      const normalized = normalizeStatus(rest.status);
+      if (normalized) {
+        rest.status = normalized;
+      } else {
+        return res.status(400).json({ error: `Invalid status '${rest.status}'. Valid statuses are: Draft, Sent, Paid, Cancelled` });
+      }
+    }
 
     if (items && items.length > 0) {
       const { computedItems, subtotal, totalCGST, totalSGST, totalIGST, totalTax, roundOff, grandTotal, amountInWords } =

@@ -11,8 +11,7 @@ import {
   FiXCircle, 
   FiDollarSign, 
   FiPercent, 
-  FiFilter,
-  FiArrowUpRight
+  FiFilter
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { DataContext } from '../context/DataContext';
@@ -23,7 +22,7 @@ import { generateInvoicePDF } from '../utils/invoicePdfGenerator';
 
 const BillingPage = () => {
   const { activeBusiness } = useContext(AuthContext);
-  const { invoices = [], deleteInvoice, loading } = useContext(DataContext);
+  const { invoices = [], deleteInvoice } = useContext(DataContext);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);

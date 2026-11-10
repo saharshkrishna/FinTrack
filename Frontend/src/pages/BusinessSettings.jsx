@@ -14,9 +14,7 @@ import {
   FiSave, 
   FiSearch, 
   FiShield,
-  FiMail,
-  FiPhone,
-  FiCheckCircle
+  FiMail
 } from 'react-icons/fi';
 import { AuthContext } from '../context/AuthContext';
 import { DataContext } from '../context/DataContext';
@@ -116,7 +114,8 @@ const BusinessSettings = () => {
     try {
       setIsSavingProfile(true);
       await updateBusiness(activeBusiness._id, profileForm);
-    } catch (_) {
+    } catch (err) {
+      console.error('Failed to update business profile:', err);
     } finally {
       setIsSavingProfile(false);
     }
@@ -129,7 +128,9 @@ const BusinessSettings = () => {
     try {
       await createCategory({ category: newCatName.trim() });
       setNewCatName('');
-    } catch (_) {}
+    } catch (err) {
+      console.error('Failed to add category:', err);
+    }
   };
 
   const handleSaveEditCategory = async (id) => {
@@ -137,7 +138,9 @@ const BusinessSettings = () => {
     try {
       await updateCategory(id, { category: editingCatName.trim() });
       setEditingCatId(null);
-    } catch (_) {}
+    } catch (err) {
+      console.error('Failed to update category:', err);
+    }
   };
 
   const handleDeleteCategory = async (id, name) => {
@@ -153,7 +156,9 @@ const BusinessSettings = () => {
     try {
       await createPaymentMode({ paymentMode: newModeName.trim() });
       setNewModeName('');
-    } catch (_) {}
+    } catch (err) {
+      console.error('Failed to add payment mode:', err);
+    }
   };
 
   const handleSaveEditMode = async (id) => {
@@ -161,7 +166,9 @@ const BusinessSettings = () => {
     try {
       await updatePaymentMode(id, { paymentMode: editingModeName.trim() });
       setEditingModeId(null);
-    } catch (_) {}
+    } catch (err) {
+      console.error('Failed to update payment mode:', err);
+    }
   };
 
   const handleDeleteMode = async (id, name) => {
@@ -178,7 +185,9 @@ const BusinessSettings = () => {
       await createParty(newPartyForm);
       setNewPartyForm({ partyName: '', phone: '', partyType: 'Supplier' });
       setShowAddPartyModal(false);
-    } catch (_) {}
+    } catch (err) {
+      console.error('Failed to add party:', err);
+    }
   };
 
   const handleSaveEditParty = async (id) => {
@@ -186,7 +195,9 @@ const BusinessSettings = () => {
     try {
       await updateParty(id, editingPartyForm);
       setEditingPartyId(null);
-    } catch (_) {}
+    } catch (err) {
+      console.error('Failed to update party:', err);
+    }
   };
 
   const handleDeleteParty = async (id, name) => {
@@ -226,7 +237,8 @@ const BusinessSettings = () => {
         teamAccessCount: updatedMembers.length
       });
       setNewMemberEmail('');
-    } catch (_) {
+    } catch (err) {
+      console.error('Failed to update team members:', err);
     } finally {
       setIsUpdatingTeam(false);
     }
@@ -243,7 +255,8 @@ const BusinessSettings = () => {
         teamMembers: updatedMembers,
         teamAccessCount: updatedMembers.length
       });
-    } catch (_) {
+    } catch (err) {
+      console.error('Failed to remove team member:', err);
     } finally {
       setIsUpdatingTeam(false);
     }
@@ -262,7 +275,8 @@ const BusinessSettings = () => {
       setDeleteBizConfirmText('');
       refreshData();
       navigate('/expense-book');
-    } catch (_) {
+    } catch (err) {
+      console.error('Failed to delete business:', err);
     } finally {
       setIsDeletingBiz(false);
     }
@@ -278,7 +292,8 @@ const BusinessSettings = () => {
       setIsDeletingAccount(true);
       await deleteAccount();
       navigate('/signup');
-    } catch (_) {
+    } catch (err) {
+      console.error('Failed to delete account:', err);
     } finally {
       setIsDeletingAccount(false);
     }

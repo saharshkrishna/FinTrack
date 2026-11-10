@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useContext } from "react";
 import { DataContext } from "../context/DataContext";
 import Header from "../components/Header";
 import Filters from "../components/Filters";

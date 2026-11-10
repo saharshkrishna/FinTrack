@@ -163,7 +163,7 @@ const InvoiceModal = ({ isOpen, onClose, initialData = null, onSaved = null }) =
         setInvoiceNumber(num);
       });
     }
-  }, [isOpen, initialData, activeBusiness]);
+  }, [isOpen, initialData, activeBusiness, getNextInvoiceNumber]);
 
   // Handle party auto-complete
   const handleSelectParty = (partyId) => {

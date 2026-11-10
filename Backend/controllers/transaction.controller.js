@@ -17,8 +17,11 @@ exports.createTransaction = async (req, res) => {
       paymentMode,
       files,
     } = req.body;
-    if (!type || !date || !amount) {
-      return res.status(400).json({ error: "Missing required fields" });
+    if (!type || !date || amount === undefined || amount === null || isNaN(Number(amount)) || Number(amount) < 0) {
+      return res.status(400).json({ error: "Missing or invalid required fields (type, date, amount >= 0)" });
+    }
+    if (!["Cash In", "Cash Out", "Credit", "Debit"].includes(type)) {
+      return res.status(400).json({ error: "Invalid transaction type. Must be 'Cash In', 'Cash Out', 'Credit', or 'Debit'" });
     }
     const newTransaction = new Transaction({
       businessId: req.businessId,
@@ -215,7 +218,7 @@ exports.getAllTransactions = async (req, res) => {
 exports.getTransactionsByType = async (req, res) => {
   try {
     const { type } = req.params;
-    if (["Cash In", "Cash Out"].includes(type) === false) {
+    if (["Cash In", "Cash Out", "Credit", "Debit"].includes(type) === false) {
       return res.status(400).json({ error: "Invalid transaction type" });
     }
     const transactions = await Transaction.find({ type, businessId: req.businessId });

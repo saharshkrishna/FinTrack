@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
     return active;
   };
 
-  const verifyToken = async (token) => {
+  const verifyToken = useCallback(async (token) => {
     try {
       const response = await axios.get('http://localhost:5000/api/auth/verify', {
         headers: { Authorization: `Bearer ${token}` }
@@ -43,12 +43,12 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('token') || '';
     verifyToken(token);
-  }, []);
+  }, [verifyToken]);
 
   const login = async (identifier, password) => {
     const response = await axios.post('http://localhost:5000/api/auth/login', {

@@ -1,8 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import PropTypes from 'prop-types';
-import { FiX, FiPlus } from 'react-icons/fi';
+import { 
+  FiX, 
+  FiPlus, 
+  FiCalendar, 
+  FiUser, 
+  FiPercent, 
+  FiFileText, 
+  FiPaperclip, 
+  FiTrash2, 
+  FiCheck,
+  FiAlertCircle,
+  FiBriefcase 
+} from 'react-icons/fi';
 import PartyNameModal from './PartyModal';
-import { useContext } from 'react';
 import { DataContext } from '../../context/DataContext';
 
 const LoanModal = ({ isOpen, onClose, onSubmit }) => {
@@ -30,11 +41,13 @@ const LoanModal = ({ isOpen, onClose, onSubmit }) => {
   const [files, setFiles] = useState([]);
 
   const handleFileChange = (e) => {
-    const selectedFiles = e.target.files;
-    if (selectedFiles && selectedFiles.length > 0) {
-      setFiles([...files, ...selectedFiles]);
-    }
-  }
+    const selectedFiles = Array.from(e.target.files);
+    setFiles(prev => [...prev, ...selectedFiles]);
+  };
+
+  const handleRemoveFile = (index) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
 
   // Calculate EMI and total closing amount when amount, interest rate, or loan term changes
   useEffect(() => {
@@ -43,41 +56,32 @@ const LoanModal = ({ isOpen, onClose, onSubmit }) => {
       const ratePerMonth = parseFloat(formData.interestRate) / (12 * 100);
       const numberOfPayments = parseFloat(formData.loanTerm);
 
-      // EMI calculation
-      const emi = (principal * ratePerMonth * Math.pow(1 + ratePerMonth, numberOfPayments)) /
-                 (Math.pow(1 + ratePerMonth, numberOfPayments) - 1);
+      if (principal > 0 && ratePerMonth > 0 && numberOfPayments > 0) {
+        // EMI calculation
+        const emi = (principal * ratePerMonth * Math.pow(1 + ratePerMonth, numberOfPayments)) /
+                   (Math.pow(1 + ratePerMonth, numberOfPayments) - 1);
 
-      // Total closing amount (principal + total interest)
-      const totalInterest = emi * numberOfPayments - principal;
-      const totalClosing = principal + totalInterest;
+        const totalInterest = emi * numberOfPayments - principal;
+        const totalClosing = principal + totalInterest;
 
-      setFormData(prev => ({
-        ...prev,
-        emi: emi.toFixed(2),
-        totalClosingAmount: totalClosing.toFixed(2)
-      }));
+        // Auto first EMI date (1 month after loan date)
+        const d = new Date(formData.date || new Date());
+        d.setMonth(d.getMonth() + 1);
+        const firstEmiDate = d.toISOString().split('T')[0];
+
+        setFormData(prev => ({
+          ...prev,
+          emi: emi.toFixed(2),
+          totalClosingAmount: totalClosing.toFixed(2),
+          emiDate: firstEmiDate
+        }));
+      }
     }
-  }, [formData.loanAmount, formData.interestRate, formData.loanTerm, formData.reimbursementPlan]);
-
-  // Calculate EMI date (first payment date)
-  useEffect(() => {
-    if (formData.date) {
-      const startDate = new Date(formData.date);
-      const emiDate = new Date(startDate.setMonth(startDate.getMonth() + 1));
-      setFormData(prev => ({
-        ...prev,
-        emiDate: emiDate.toISOString().split('T')[0]
-      }));
-    }
-  }, [formData.date]);
-
-  const handleRemoveFile = (index) => {
-    setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
-  };
+  }, [formData.loanAmount, formData.interestRate, formData.loanTerm, formData.reimbursementPlan, formData.date]);
 
   const handleAmountChange = (e) => {
     const value = e.target.value;
-    if (value.startsWith('0') && value.length > 1) {
+    if (value.startsWith('0') && value.length > 1 && !value.startsWith('0.')) {
       setError('Amount cannot start with zero.');
       return;
     }
@@ -85,335 +89,387 @@ const LoanModal = ({ isOpen, onClose, onSubmit }) => {
     setFormData(prev => ({ ...prev, loanAmount: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.loanTitle || !formData.loanAmount) {
-      setError('Please fill in all required fields');
+
+    if (!formData.loanTitle.trim()) {
+      setError('Loan title is required.');
       return;
     }
-    if (formData.reimbursementPlan === 'yes' && (!formData.interestRate || !formData.loanTerm)) {
-      setError('For reimbursement plans, please fill in interest rate and loan term');
+
+    const principal = parseFloat(formData.loanAmount);
+    if (!principal || principal <= 0) {
+      setError('Please enter a valid loan amount greater than zero.');
       return;
     }
-    onSubmit(formData);
+
+    const loanEntry = {
+      ...formData,
+      loanAmount: principal,
+      files: files.map(file => file.name),
+      createdAt: new Date().toISOString()
+    };
+
+    if (onSubmit) {
+      await onSubmit(loanEntry);
+    }
     onClose();
   };
 
-  const handleAddPartyName = (partyData) => {
-    setFormData((prev) => ({
-      ...prev,
-      partyName: partyData.partyName,
-    }));
+  const handleAddParty = (newParty) => {
+    setFormData(prev => ({ ...prev, partyName: newParty }));
   };
 
   if (!isOpen) return null;
 
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex justify-end z-40"
+    <div
+      className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fade-in"
       onClick={onClose}
     >
-      <div 
-        className="bg-white w-1/2 h-full overflow-hidden"
+      <div
+        className="bg-white rounded-2xl shadow-2xl border border-slate-200/90 w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden text-slate-800"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-white z-10 p-6 border-b">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">New Loan Entry</h2>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-              <FiX className="w-6 h-6" />
-            </button>
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200/60 text-indigo-600 flex items-center justify-center shadow-2xs">
+              <FiBriefcase className="text-xl" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900 leading-tight">
+                  New Loan Entry
+                </h2>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                  Financing
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">
+                Register a new loan or borrowing with interest schedule
+              </p>
+            </div>
           </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            aria-label="Close"
+          >
+            <FiX className="text-lg" />
+          </button>
         </div>
 
-        <div className="overflow-y-auto h-[calc(100vh-80px)] p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Date <span className="text-red-500">*</span>
-                </label>
+        {/* Scrollable Form Body */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar text-xs">
+          {error && (
+            <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-xl border border-rose-200 flex items-center gap-2">
+              <FiAlertCircle className="shrink-0 text-sm" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Date & Loan Title */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Issue Date <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
+                <FiCalendar className="absolute left-3 top-2.5 text-slate-400 text-sm" />
                 <input
                   type="date"
+                  required
                   value={formData.date}
                   onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                  className="w-3/4 p-2 border rounded-lg"
-                  required
+                  className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-xl text-xs md:text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Loan Title <span className="text-red-500">*</span>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Loan Title <span className="text-rose-500">*</span>
               </label>
-              <input
-                type="text"
-                placeholder="Enter loan title/description"
-                value={formData.loanTitle}
-                onChange={(e) => setFormData(prev => ({ ...prev, loanTitle: e.target.value }))}
-                className="w-full p-2 border rounded-lg"
-                required
-              />
+              <div className="relative">
+                <FiFileText className="absolute left-3 top-2.5 text-slate-400 text-sm" />
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. HDFC Machinery Loan, Working Capital"
+                  value={formData.loanTitle}
+                  onChange={(e) => setFormData(prev => ({ ...prev, loanTitle: e.target.value }))}
+                  className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-xl text-xs md:text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all"
+                />
+              </div>
             </div>
+          </div>
 
+          {/* Loan Amount & Daily Interest */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Loan Amount <span className="text-red-500">*</span>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Principal Amount (₹) <span className="text-rose-500">*</span>
               </label>
-              <input
-                type="number"
-                placeholder="Enter loan amount"
-                value={formData.loanAmount}
-                onChange={handleAmountChange}
-                className="w-full p-2 border rounded-lg"
-                required
-              />
-              {error && <div className="mt-1 text-sm text-red-500">{error}</div>}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Daily Interest (%)
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                placeholder="Enter daily interest rate"
-                value={formData.dailyInterest}
-                onChange={(e) => setFormData(prev => ({ ...prev, dailyInterest: e.target.value }))}
-                className="w-full p-2 border rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Reimbursement Plan
-              </label>
-              <div className="flex items-center space-x-4 mt-2">
-                <label className="inline-flex items-center">
-                  <input
-                    type="radio"
-                    className="form-radio"
-                    name="reimbursementPlan"
-                    value="yes"
-                    checked={formData.reimbursementPlan === 'yes'}
-                    onChange={() => setFormData(prev => ({ ...prev, reimbursementPlan: 'yes' }))}
-                  />
-                  <span className="ml-2">Yes</span>
-                </label>
-                <label className="inline-flex items-center">
-                  <input
-                    type="radio"
-                    className="form-radio"
-                    name="reimbursementPlan"
-                    value="no"
-                    checked={formData.reimbursementPlan === 'no'}
-                    onChange={() => setFormData(prev => ({ ...prev, reimbursementPlan: 'no' }))}
-                  />
-                  <span className="ml-2">No</span>
-                </label>
+              <div className="relative">
+                <span className="absolute left-3 top-2.5 text-slate-400 text-sm font-semibold">₹</span>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  step="any"
+                  placeholder="e.g. 500000"
+                  value={formData.loanAmount}
+                  onChange={handleAmountChange}
+                  className="w-full pl-8 pr-3 py-2 font-mono border border-slate-300 rounded-xl text-xs md:text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all font-semibold text-slate-900"
+                />
               </div>
             </div>
 
-            {formData.reimbursementPlan === 'yes' && (
-              <>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Interest Rate (% per year) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="Enter annual interest rate"
-                      value={formData.interestRate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, interestRate: e.target.value }))}
-                      className="w-full p-2 border rounded-lg"
-                      required={formData.reimbursementPlan === 'yes'}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Loan Term (months) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="Enter loan term in months"
-                      value={formData.loanTerm}
-                      onChange={(e) => setFormData(prev => ({ ...prev, loanTerm: e.target.value }))}
-                      className="w-full p-2 border rounded-lg"
-                      required={formData.reimbursementPlan === 'yes'}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Monthly EMI
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.emi}
-                      className="w-full p-2 border rounded-lg bg-gray-50"
-                      readOnly
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Total Closing Amount
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.totalClosingAmount}
-                      className="w-full p-2 border rounded-lg bg-gray-50"
-                      readOnly
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Date of First EMI
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.emiDate}
-                    className="w-full p-2 border rounded-lg bg-gray-50"
-                    readOnly
-                  />
-                </div>
-              </>
-            )}
-
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Loan Issued By
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Daily Interest Rate (%) <span className="text-slate-400 font-normal">(Optional)</span>
               </label>
-              <input
-                type="text"
-                placeholder="Enter issuer name"
-                value={formData.loanIssuedBy}
-                onChange={(e) => setFormData(prev => ({ ...prev, loanIssuedBy: e.target.value }))}
-                className="w-full p-2 border rounded-lg"
-              />
+              <div className="relative">
+                <FiPercent className="absolute left-3 top-2.5 text-slate-400 text-sm" />
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="e.g. 0.05"
+                  value={formData.dailyInterest}
+                  onChange={(e) => setFormData(prev => ({ ...prev, dailyInterest: e.target.value }))}
+                  className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-xl text-xs md:text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all"
+                />
+              </div>
             </div>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Party Name (Contact)</label>
-              <div className="flex gap-2">
-                <select
-                  value={formData.partyName}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, partyName: e.target.value }))}
-                  className="w-1/3 p-2 border rounded-lg"
-                >
-                  <option value="">Search or Select</option>
-                  {parties?.map((party, index) => (
-                    <option key={index} value={party.partyName}>
-                      {party.partyName}
-                    </option>
-                  ))}
-                </select>
+          {/* Reimbursement Plan Switch */}
+          <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-slate-800 block">
+                  EMI & Reimbursement Plan
+                </span>
+                <span className="text-[11px] text-slate-500">
+                  Does this loan have a structured monthly installment schedule?
+                </span>
+              </div>
+              <div className="flex p-0.5 bg-white border border-slate-200 rounded-lg">
                 <button
                   type="button"
-                  onClick={() => setIsPartyModalOpen(true)}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg"
+                  onClick={() => setFormData(prev => ({ ...prev, reimbursementPlan: 'yes' }))}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                    formData.reimbursementPlan === 'yes'
+                      ? 'bg-indigo-600 text-white shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
                 >
-                  <FiPlus />
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, reimbursementPlan: 'no' }))}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                    formData.reimbursementPlan === 'no'
+                      ? 'bg-slate-700 text-white shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  No
                 </button>
               </div>
             </div>
 
+            {formData.reimbursementPlan === 'yes' && (
+              <div className="space-y-3 pt-2 border-t border-slate-200/80 animate-fade-in">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      Annual Interest Rate (%) *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      placeholder="e.g. 10.5"
+                      value={formData.interestRate}
+                      onChange={(e) => setFormData(prev => ({ ...prev, interestRate: e.target.value }))}
+                      className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      Tenure (Months) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      placeholder="e.g. 24"
+                      value={formData.loanTerm}
+                      onChange={(e) => setFormData(prev => ({ ...prev, loanTerm: e.target.value }))}
+                      className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
+
+                {formData.emi && (
+                  <div className="grid grid-cols-3 gap-2 p-2.5 bg-white rounded-lg border border-indigo-100 text-[11px]">
+                    <div>
+                      <span className="text-slate-400 block">Monthly EMI</span>
+                      <strong className="text-indigo-700 font-mono text-xs">₹{formData.emi}</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block">Total Payable</span>
+                      <strong className="text-slate-800 font-mono text-xs">₹{formData.totalClosingAmount}</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block">First EMI Date</span>
+                      <strong className="text-slate-800 font-mono text-xs">{formData.emiDate}</strong>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Party & Issuer */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Remarks</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Lender / Party Contact
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsPartyModalOpen(true)}
+                  className="text-[11px] text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 transition-colors cursor-pointer"
+                >
+                  <FiPlus className="text-xs" />
+                  <span>New Contact</span>
+                </button>
+              </div>
+              <div className="relative">
+                <FiUser className="absolute left-3 top-2.5 text-slate-400 text-sm" />
+                <select
+                  value={formData.partyName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, partyName: e.target.value }))}
+                  className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-xl text-xs md:text-sm bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all"
+                >
+                  <option value="">Select lender contact</option>
+                  {parties?.map((p, idx) => (
+                    <option key={p._id || idx} value={p.partyName}>
+                      {p.partyName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Loan Issued By / Institution
+              </label>
+              <div className="relative">
+                <FiBriefcase className="absolute left-3 top-2.5 text-slate-400 text-sm" />
+                <input
+                  type="text"
+                  placeholder="e.g. State Bank of India, Bajaj Finserv"
+                  value={formData.loanIssuedBy}
+                  onChange={(e) => setFormData(prev => ({ ...prev, loanIssuedBy: e.target.value }))}
+                  className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-xl text-xs md:text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Remarks */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Remarks & Terms <span className="text-slate-400 font-normal">(Optional)</span>
+            </label>
+            <textarea
+              rows="2"
+              placeholder="e.g. Sanction letter reference, collateral pledged, repayment account"
+              value={formData.remarks}
+              onChange={(e) => setFormData(prev => ({ ...prev, remarks: e.target.value }))}
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs md:text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none transition-all"
+            />
+          </div>
+
+          {/* Attachments */}
+          <div className="pt-1">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-semibold text-slate-700">
+                Loan Agreement & Sanction Letter
+              </label>
               <input
-                type="text"
-                placeholder="Enter additional details"
-                value={formData.remarks}
-                onChange={(e) => setFormData(prev => ({ ...prev, remarks: e.target.value }))}
-                className="w-full p-2 border rounded-lg"
+                type="file"
+                id="loanFileInput"
+                className="hidden"
+                onChange={handleFileChange}
+                multiple
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Payment Mode</label>
-              <select
-                value={formData.paymentMode}
-                onChange={(e) => setFormData(prev => ({ ...prev, paymentMode: e.target.value }))}
-                className="w-1/3 p-2 border rounded-lg"
+              <button
+                type="button"
+                onClick={() => document.getElementById("loanFileInput")?.click()}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors cursor-pointer"
               >
-                <option value="Cash">Cash</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Check">Check</option>
-              </select>
+                <FiPaperclip className="text-xs" />
+                <span>Attach Docs</span>
+              </button>
             </div>
 
-            {/* File Upload & Save Button in One Row */}
-<div className="flex justify-between items-center mt-4">
-  
-  {/* Attach Bills Section - Aligned Left */}
-  <div className="flex items-center gap-3">
-    <input
-      type="file"
-      id="fileInput"
-      style={{ display: "none" }}
-      onChange={handleFileChange}
-      multiple
-    />
+            {files.length > 0 ? (
+              <div className="flex flex-wrap gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                {files.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-xs shadow-2xs"
+                  >
+                    <span className="truncate max-w-[160px] text-slate-700">{file.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile(index)}
+                      className="text-slate-400 hover:text-rose-500 transition-colors"
+                      title="Remove file"
+                    >
+                      <FiTrash2 className="text-xs" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-[11px] text-slate-400 italic">
+                No files attached. Supports PDF sanction letters, agreements, repayment schedules.
+              </div>
+            )}
+          </div>
 
-    <button
-      type="button"
-      className="px-4 py-2 bg-blue-500 text-white rounded-lg shrink-0"
-      onClick={() => document.getElementById("fileInput").click()}
-    >
-      📎 Attach Bills
-    </button>
-
-    {/* Show Number of Files Instead of Expanding Button */}
-    {files.length > 0 && (
-      <span className="text-sm text-gray-500 whitespace-nowrap">
-        ({files.length} files selected)
-      </span>
-    )}
-  </div>
-
-  {/* Save Button - Aligned Right */}
-  <div>
-    <button
-      type="submit"
-      className="px-4 py-2 bg-green-600 text-white rounded-lg"
-    >
-      Save
-    </button>
-  </div>
-</div>
-
-{/* File List (Fixed Height to Prevent Button Movement) */}
-<div className="mt-2 min-h-[40px]">
-  {files.length > 0 && (
-    <div className="flex flex-wrap gap-2">
-      {files.map((file, index) => (
-        <div key={index} className="flex items-center gap-2 bg-gray-100 p-2 rounded-lg">
-          <span className="text-sm text-gray-700 truncate max-w-[150px]">{file.name}</span>
-          <button
-            onClick={() => handleRemoveFile(index)}
-            className="text-sm text-red-500 hover:underline"
-          >
-            ❌
-          </button>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
-          </form>
-        </div>
+          {/* Footer */}
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer"
+            >
+              <FiCheck className="text-sm" />
+              <span>Save Loan Entry</span>
+            </button>
+          </div>
+        </form>
       </div>
+
       {isPartyModalOpen && (
         <PartyNameModal
           onClose={() => setIsPartyModalOpen(false)}
-          onAdd={handleAddPartyName}
+          onAddParty={handleAddParty}
         />
       )}
     </div>
@@ -421,9 +477,9 @@ const LoanModal = ({ isOpen, onClose, onSubmit }) => {
 };
 
 LoanModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
-  isOpen: PropTypes.bool.isRequired,
 };
 
 export default LoanModal;

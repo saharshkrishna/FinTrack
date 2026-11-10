@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import { FiChevronLeft, FiUpload, FiDownload, FiLayers } from 'react-icons/fi';
+import { FiChevronLeft, FiUpload, FiDownload } from 'react-icons/fi';
 import { AuthContext } from '../context/AuthContext';
 
 const Header = ({ onOpenBulkImport, onOpenReport }) => {

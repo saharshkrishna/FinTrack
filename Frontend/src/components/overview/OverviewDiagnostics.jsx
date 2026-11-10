@@ -8,8 +8,6 @@ import {
   FiCheckSquare,
   FiSquare,
   FiRotateCcw,
-  FiShield,
-  FiFilter,
 } from 'react-icons/fi';
 
 const OverviewDiagnostics = ({

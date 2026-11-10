@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { FiArrowLeft, FiRefreshCw, FiDownload, FiLayers } from 'react-icons/fi';
+import { FiArrowLeft, FiRefreshCw, FiDownload } from 'react-icons/fi';
 
 const TIME_RANGES = [
   { label: 'All Time', value: 'all' },

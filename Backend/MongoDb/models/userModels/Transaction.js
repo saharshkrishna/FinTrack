@@ -20,6 +20,7 @@ const transactionSchema = new mongoose.Schema({
     amount: {
         type: Number,
         required: true,
+        min: [0, 'Amount must be greater than or equal to 0']
     },
     partyName: {
         type: String,

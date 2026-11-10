@@ -1,6 +1,6 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { FiSearch, FiPlus, FiMinus, FiArrowUpRight, FiArrowDownRight, FiCreditCard } from "react-icons/fi";
+import { FiSearch, FiPlus, FiMinus } from "react-icons/fi";
 import LoanReModal from "./modal/LoanReModal";
 import LoanModal from "./modal/LoanModal";
 import CashinModal from "./modal/CashinModal";

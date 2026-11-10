@@ -1,6 +1,6 @@
 import { useState, useContext, useMemo } from "react";
 import PropTypes from "prop-types";
-import { FiCalendar, FiFilter, FiRotateCcw } from "react-icons/fi";
+import { FiCalendar, FiRotateCcw } from "react-icons/fi";
 import { DataContext } from "../context/DataContext";
 import DateModal from "./modal/DateModal";
 
